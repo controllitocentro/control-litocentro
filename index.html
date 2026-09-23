@@ -316,7 +316,6 @@
     }
 
     function init() {
-      // Ajustar select a usuario recordado (si no es admin)
       if (currentUser === 'admin') currentUser = 'sin_seleccion';
       document.getElementById('selectUsuario').value = currentUser;
 
@@ -765,7 +764,8 @@
       }
     }
 
-    function sendWhatsAppClient(id) {
+    // ACTUALIZACIÓN DE PAGO SIN ENVIAR MENSAJE
+    function actualizarPagoSoloGuardar(id) {
       const order = orders.find(o => o.id === id);
       const valInput = document.getElementById(`val-${id}`);
       const pagoSelect = document.getElementById(`pago-${id}`);
@@ -774,6 +774,16 @@
       if (valInput) order.valorCalculado = parseFloat(valInput.value) || 0;
       if (pagoSelect) order.pagado = pagoSelect.value === 'true';
       if (medioSelect) order.medioPago = medioSelect.value;
+
+      saveStorage();
+      renderOrders();
+      alert(`Estado de pago para la orden ${order.id} actualizado correctamente.`);
+    }
+
+    // 1. ENVIAR MENSAJE DE TRABAJO TERMINADO Y AVISO DE COBRO AL CLIENTE
+    function sendWhatsAppTrabajoListo(id) {
+      const order = orders.find(o => o.id === id);
+      actualizarValoresLocales(id);
 
       order.estado = 'Liquidado';
       saveStorage();
@@ -785,6 +795,36 @@
       const url = `https://wa.me/${order.telefono}?text=${mensaje}`;
       window.open(url, '_blank');
       renderOrders();
+    }
+
+    // 2. ENVIAR MENSAJE DE CONFIRMACIÓN DE PAGO RECIBIDO AL CLIENTE
+    function sendWhatsAppConfirmacionPago(id) {
+      const order = orders.find(o => o.id === id);
+      actualizarValoresLocales(id);
+
+      if (!order.pagado) {
+        alert("Para enviar el comprobante de pago, cambia primero el estado del pago a 'Pagado'.");
+        return;
+      }
+
+      saveStorage();
+
+      const mensaje = `Hola *${order.cliente}*! 👋%0A%0ATe confirmamos que hemos recibido tu pago de *$${Number(order.valorCalculado).toLocaleString('es-CO')} COP* a través de *${order.medioPago}* para el trabajo (*${order.trabajo}*) según Remisión *N° ${order.remision}*.%0A%0A✅ *ESTADO:* PAGO RECIBIDO SATISFACTORIAMENTE.%0A%0A¡Muchas gracias por tu compra en *FM*!`;
+
+      const url = `https://wa.me/${order.telefono}?text=${mensaje}`;
+      window.open(url, '_blank');
+      renderOrders();
+    }
+
+    function actualizarValoresLocales(id) {
+      const order = orders.find(o => o.id === id);
+      const valInput = document.getElementById(`val-${id}`);
+      const pagoSelect = document.getElementById(`pago-${id}`);
+      const medioSelect = document.getElementById(`medio-${id}`);
+
+      if (valInput) order.valorCalculado = parseFloat(valInput.value) || 0;
+      if (pagoSelect) order.pagado = pagoSelect.value === 'true';
+      if (medioSelect) order.medioPago = medioSelect.value;
     }
 
     function limpiarFiltros() {
@@ -820,7 +860,7 @@
         if (fMedPag !== 'todos') filteredOrders = filteredOrders.filter(o => o.medioPago === fMedPag);
         if (fCli !== 'todos') filteredOrders = filteredOrders.filter(o => o.cliente === fCli);
       } else {
-        filteredOrders = []; // Sin selección
+        filteredOrders = [];
       }
 
       document.getElementById('orderCount').innerText = `${filteredOrders.length} Órdenes`;
@@ -900,9 +940,9 @@
                 </div>
                 <div>
                   <label class="block font-semibold text-slate-600 mb-1">Estado del Pago:</label>
-                  <select id="pago-${order.id}" class="w-full p-1.5 border rounded bg-white">
-                    <option value="false" ${!order.pagado ? 'selected' : ''}>Pendiente</option>
-                    <option value="true" ${order.pagado ? 'selected' : ''}>Pagado</option>
+                  <select id="pago-${order.id}" class="w-full p-1.5 border rounded bg-white font-bold text-slate-800">
+                    <option value="false" ${!order.pagado ? 'selected' : ''}>⏳ Pendiente de Pago</option>
+                    <option value="true" ${order.pagado ? 'selected' : ''}>✅ Pagado</option>
                   </select>
                 </div>
                 <div>
@@ -916,10 +956,19 @@
                 </div>
               </div>
 
-              <div class="pt-2 flex justify-end">
-                <button onclick="sendWhatsAppClient('${order.id}')" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2 rounded-lg text-xs flex items-center gap-1.5 shadow">
-                  <i class="fa-brands fa-whatsapp text-sm"></i> Notificar Cliente por WhatsApp
+              <div class="pt-3 border-t border-slate-200 flex flex-wrap justify-between items-center gap-2">
+                <button onclick="actualizarPagoSoloGuardar('${order.id}')" class="bg-slate-600 hover:bg-slate-700 text-white font-bold px-3 py-1.5 rounded text-[11px] flex items-center gap-1 shadow">
+                  <i class="fa-solid fa-floppy-disk"></i> Guardar Estado Pago (Sin Mensaje)
                 </button>
+
+                <div class="flex flex-wrap gap-2">
+                  <button onclick="sendWhatsAppTrabajoListo('${order.id}')" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3 py-1.5 rounded text-[11px] flex items-center gap-1 shadow">
+                    <i class="fa-brands fa-whatsapp"></i> 1. Avisar Trabajo Terminado
+                  </button>
+                  <button onclick="sendWhatsAppConfirmacionPago('${order.id}')" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-3 py-1.5 rounded text-[11px] flex items-center gap-1 shadow">
+                    <i class="fa-brands fa-whatsapp"></i> 2. Confirmar Pago Recibido
+                  </button>
+                </div>
               </div>
             </div>`;
         }
