@@ -55,7 +55,6 @@
       </div>
 
       <div id="tarifasContent" class="hidden text-xs space-y-4 border-t pt-3">
-        <!-- FORMULARIO PARA AGREGAR NUEVO CLIENTE -->
         <form id="formAddCliente" onsubmit="guardarNuevoCliente(event)" class="bg-slate-50 p-3 rounded-lg border border-slate-200 space-y-3">
           <p class="font-bold text-slate-700"><i class="fa-solid fa-user-plus mr-1 text-blue-600"></i> Agregar o Modificar Cliente:</p>
           <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2">
@@ -64,7 +63,7 @@
               <input type="text" id="cliNombre" placeholder="Ej. Empaques Caribe" class="w-full p-2 border rounded bg-white text-xs" required>
             </div>
             <div>
-              <label class="block text-slate-600 font-semibold mb-1">WhatsApp (Sin +57)</label>
+              <label class="block text-slate-600 font-semibold mb-1">WhatsApp Cliente (Sin +57)</label>
               <input type="tel" id="cliTel" placeholder="Ej. 3001234567" class="w-full p-2 border rounded bg-white text-xs" required>
             </div>
             <div>
@@ -83,7 +82,7 @@
 
         <p class="text-slate-500 font-semibold">Clientes registrados actualmente:</p>
         <div id="listaTarifas" class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          <!-- Se renderizan clientes y tarifas dinámicamente -->
+          <!-- Se renderizan clientes dinámicamente -->
         </div>
       </div>
     </section>
@@ -112,7 +111,7 @@
           </select>
         </div>
         <div>
-          <label class="block text-xs font-semibold text-slate-600 mb-1">Teléfono WhatsApp</label>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Teléfono WhatsApp Cliente</label>
           <input type="tel" id="inputTel" placeholder="Ej. 3001234567" class="w-full p-2 border rounded-lg text-xs" required>
         </div>
         <div>
@@ -153,32 +152,16 @@
 
   <script>
     let currentRole = 'admin';
+    const CELULAR_JEFE = "573115926645"; // Tu número registrado para recibir alertas
+    let timerInterval = null;
 
-    // Cargar tarifas de localStorage o valores por defecto
     let tarifasClientes = JSON.parse(localStorage.getItem('fastmark_tarifas')) || {
       "Cliente General": { tarifaUnidad: 25, minima: 70000, tel: "3000000000" },
       "Empaques del Caribe": { tarifaUnidad: 22, minima: 65000, tel: "3001234567" },
       "Diseños & Impresos": { tarifaUnidad: 30, minima: 90000, tel: "3159876543" }
     };
 
-    // Cargar órdenes de localStorage o iniciales
-    let orders = JSON.parse(localStorage.getItem('fastmark_orders')) || [
-      {
-        id: "OP-101",
-        local: "Planta Pegue Cajas",
-        remision: "REM-8841",
-        cliente: "Empaques del Caribe",
-        telefono: "573001234567",
-        trabajo: "5,000 Pegue Lateral",
-        cantidad: 5000,
-        estado: "Terminado",
-        tiempos: "1h 15m",
-        consumos: "2 Kg Pega PVA",
-        valorCalculado: 110000,
-        pagado: false,
-        medioPago: "Pendiente"
-      }
-    ];
+    let orders = JSON.parse(localStorage.getItem('fastmark_orders')) || [];
 
     function saveStorage() {
       localStorage.setItem('fastmark_tarifas', JSON.stringify(tarifasClientes));
@@ -189,6 +172,28 @@
       renderClientesSelect();
       renderTarifas();
       renderOrders();
+
+      // Actualizar cronómetro activo en pantalla cada segundo
+      if (timerInterval) clearInterval(timerInterval);
+      timerInterval = setInterval(() => {
+        let activeTimer = false;
+        orders.forEach(o => {
+          if (o.estado === 'En Ejecución' && o.startTime) {
+            activeTimer = true;
+            const diffMs = new Date() - new Date(o.startTime);
+            const el = document.getElementById(`timer-${o.id}`);
+            if (el) el.innerText = formatDuration(diffMs);
+          }
+        });
+      }, 1000);
+    }
+
+    function formatDuration(ms) {
+      const totalSec = Math.floor(ms / 1000);
+      const hours = Math.floor(totalSec / 3600);
+      const minutes = Math.floor((totalSec % 3600) / 60);
+      const seconds = totalSec % 60;
+      return `${hours > 0 ? hours + 'h ' : ''}${minutes}m ${seconds}s`;
     }
 
     function setRole(role) {
@@ -212,14 +217,13 @@
         secCreate.classList.add('hidden');
         secTarifas.classList.add('hidden');
         notice.className = "p-3 bg-emerald-50 border-l-4 border-emerald-500 text-emerald-900 rounded-r-lg text-sm shadow-sm";
-        notice.innerHTML = `<span><i class="fa-solid fa-helmet-safety mr-1 text-emerald-600"></i> <strong>Modo Operario:</strong> Vista limpia sin precios. Solo reporte de tiempos, consumos y aviso de trabajo terminado.</span>`;
+        notice.innerHTML = `<span><i class="fa-solid fa-helmet-safety mr-1 text-emerald-600"></i> <strong>Modo Operario:</strong> Presiona "Iniciar Trabajo" al arrancar y "Terminar Trabajo" al finalizar para avisar al jefe.</span>`;
       }
       renderOrders();
     }
 
     function toggleTarifasForm() {
-      const content = document.getElementById('tarifasContent');
-      content.classList.toggle('hidden');
+      document.getElementById('tarifasContent').classList.toggle('hidden');
     }
 
     function guardarNuevoCliente(e) {
@@ -231,21 +235,16 @@
 
       if (!nombre) return;
 
-      tarifasClientes[nombre] = {
-        tarifaUnidad: tarifa,
-        minima: minima,
-        tel: tel
-      };
-
+      tarifasClientes[nombre] = { tarifaUnidad: tarifa, minima: minima, tel: tel };
       saveStorage();
       renderClientesSelect();
       renderTarifas();
       document.getElementById('formAddCliente').reset();
-      alert(`Cliente "${nombre}" guardado correctamente.`);
+      alert(`Cliente "${nombre}" guardado.`);
     }
 
     function eliminarCliente(nombre) {
-      if (confirm(`¿Deseas eliminar a "${nombre}" de la lista?`)) {
+      if (confirm(`¿Eliminar a "${nombre}"?`)) {
         delete tarifasClientes[nombre];
         saveStorage();
         renderClientesSelect();
@@ -270,7 +269,7 @@
           <div class="bg-slate-50 p-2.5 rounded border border-slate-200 flex justify-between items-center">
             <div>
               <p class="font-bold text-slate-800">${cli}</p>
-              <p class="text-slate-500 text-[10px]">Tel: ${data.tel || 'Sin registrado'}</p>
+              <p class="text-slate-500 text-[10px]">Tel: ${data.tel || 'Sin registrar'}</p>
             </div>
             <div class="text-right">
               <span class="font-bold text-indigo-700">$${data.tarifaUnidad}/und</span>
@@ -293,7 +292,6 @@
         const tarifa = tarifasClientes[cli];
         let valor = cant * tarifa.tarifaUnidad;
         if (valor < tarifa.minima && cant > 0) valor = tarifa.minima;
-
         document.getElementById('precioSugeridoTxt').innerText = `$${valor.toLocaleString('es-CO')} COP`;
       }
     }
@@ -315,9 +313,11 @@
         telefono: "57" + document.getElementById('inputTel').value.replace(/\D/g,''),
         trabajo: document.getElementById('inputTrabajo').value,
         cantidad: cant,
-        estado: "En Proceso",
-        tiempos: "Sin registrar",
-        consumos: "Sin registrar",
+        estado: "Pendiente", // 'Pendiente', 'En Ejecución', 'Terminado', 'Liquidado'
+        startTime: null,
+        endTime: null,
+        tiempos: "Sin iniciar",
+        consumos: "",
         valorCalculado: valCalc,
         pagado: false,
         medioPago: "Pendiente"
@@ -327,20 +327,50 @@
       saveStorage();
       document.getElementById('formNewOrder').reset();
       renderOrders();
-      alert(`Orden ${newOrder.id} registrada con Remisión ${newOrder.remision}`);
+      alert(`Orden ${newOrder.id} registrada.`);
     }
 
+    // ACCIÓN OPERARIO: INICIAR ARRANQUE
+    function startJob(id) {
+      const order = orders.find(o => o.id === id);
+      if (order) {
+        order.estado = 'En Ejecución';
+        order.startTime = new Date().toISOString();
+        saveStorage();
+        renderOrders();
+      }
+    }
+
+    // ACCIÓN OPERARIO: TERMINAR TRABAJO Y NOTIFICAR AL JEFE POR WHATSAPP
     function finishJob(id) {
       const order = orders.find(o => o.id === id);
       if (order) {
         order.estado = 'Terminado';
+        order.endTime = new Date().toISOString();
+
+        if (order.startTime) {
+          const diffMs = new Date(order.endTime) - new Date(order.startTime);
+          order.tiempos = formatDuration(diffMs);
+        } else {
+          order.tiempos = "No cronometrado";
+        }
+
+        const inputConsumo = document.getElementById(`consumo-${id}`);
+        if (inputConsumo) order.consumos = inputConsumo.value;
+
         saveStorage();
         renderOrders();
-        alert(`¡Orden ${id} finalizada! Se ha generado la notificación para el Administrador.`);
+
+        // Enviar alerta por WhatsApp al celular del jefe (311 592 6645)
+        const msjJefe = `🚨 *TRABAJO TERMINADO EN PLANTA*%0A%0A📄 *Orden:* ${order.id}%0A📌 *Remisión N°:* ${order.remision}%0A🏢 *Sede:* ${order.local}%0A👤 *Cliente:* ${order.cliente}%0A📦 *Trabajo:* ${order.trabajo} (${order.cantidad.toLocaleString('es-CO')} unds)%0A⏱️ *Tiempo Total Laborado:* ${order.tiempos}%0A🧪 *Consumos:* ${order.consumos || 'Ninguno registrado'}%0A%0AYa puedes ingresar a la app para efectuar la liquidación y enviar la notificación al cliente.`;
+
+        const urlJefe = `https://wa.me/${CELULAR_JEFE}?text=${msjJefe}`;
+        window.open(urlJefe, '_blank');
       }
     }
 
-    function sendWhatsApp(id) {
+    // ACCIÓN ADMIN: NOTIFICAR COBRO AL CLIENTE
+    function sendWhatsAppClient(id) {
       const order = orders.find(o => o.id === id);
       const valInput = document.getElementById(`val-${id}`);
       const pagoSelect = document.getElementById(`pago-${id}`);
@@ -368,8 +398,9 @@
       container.innerHTML = "";
 
       orders.forEach(order => {
-        let badgeColor = "bg-amber-100 text-amber-800 border border-amber-300";
-        if (order.estado === 'Terminado') badgeColor = "bg-emerald-100 text-emerald-800 border border-emerald-400 font-bold animate-pulse";
+        let badgeColor = "bg-slate-200 text-slate-700";
+        if (order.estado === 'En Ejecución') badgeColor = "bg-amber-100 text-amber-800 border border-amber-300 font-bold animate-pulse";
+        if (order.estado === 'Terminado') badgeColor = "bg-emerald-100 text-emerald-800 border border-emerald-400 font-bold";
         if (order.estado === 'Liquidado') badgeColor = "bg-blue-100 text-blue-800 border border-blue-300";
 
         let cardHtml = `
@@ -387,25 +418,32 @@
               <p><strong>Cliente:</strong> ${order.cliente}</p>
               <p><strong>Trabajo:</strong> ${order.trabajo}</p>
               <p><strong>Cantidad:</strong> ${order.cantidad.toLocaleString('es-CO')} unds</p>
-              <p><strong>Remisión Física:</strong> <span class="text-indigo-600 font-bold">${order.remision}</span></p>
+              <p><strong>Tiempo Registrado:</strong> <span class="font-bold text-slate-800" id="timer-${order.id}">${order.tiempos}</span></p>
             </div>`;
 
         // VISTA OPERARIO
         if (currentRole === 'operario') {
-          cardHtml += `
-            <div class="bg-slate-50 p-2.5 rounded-lg text-xs space-y-1">
-              <p><strong>Reportar Tiempos / Consumos:</strong></p>
-              <div class="grid grid-cols-2 gap-2">
-                <input type="text" placeholder="Ej. 1h 20m" value="${order.tiempos !== 'Sin registrar' ? order.tiempos : ''}" onchange="order.tiempos=this.value; saveStorage();" class="p-1 border rounded bg-white">
-                <input type="text" placeholder="Ej. 2.5 kg pega" value="${order.consumos !== 'Sin registrar' ? order.consumos : ''}" onchange="order.consumos=this.value; saveStorage();" class="p-1 border rounded bg-white">
-              </div>
-            </div>`;
-
-          if (order.estado !== 'Terminado' && order.estado !== 'Liquidado') {
+          if (order.estado === 'Pendiente') {
             cardHtml += `
-              <button onclick="finishJob('${order.id}')" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 rounded-lg text-xs flex items-center justify-center gap-2 shadow">
-                <i class="fa-solid fa-check-circle"></i> Finalizar Trabajo y Notificar al Jefe
+              <button onclick="startJob('${order.id}')" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-lg text-xs flex items-center justify-center gap-2 shadow">
+                <i class="fa-solid fa-play"></i> Iniciar Arranque de Producción
               </button>`;
+          } else if (order.estado === 'En Ejecución') {
+            cardHtml += `
+              <div class="bg-amber-50 p-3 rounded-lg border border-amber-200 space-y-2">
+                <p class="text-xs text-amber-900 font-bold flex items-center gap-2">
+                  <i class="fa-solid fa-spinner fa-spin text-amber-600"></i> Producción en curso...
+                </p>
+                <div>
+                  <label class="block text-[11px] text-slate-600 font-semibold mb-1">Consumos / Adhesivos / Insumos:</label>
+                  <input type="text" id="consumo-${order.id}" placeholder="Ej. 2.5 kg Pega PVA" value="${order.consumos}" class="w-full p-1.5 border rounded text-xs bg-white">
+                </div>
+                <button onclick="finishJob('${order.id}')" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-lg text-xs flex items-center justify-center gap-2 shadow">
+                  <i class="fa-solid fa-stop"></i> Terminar Trabajo y Enviar Alerta al Jefe
+                </button>
+              </div>`;
+          } else {
+            cardHtml += `<p class="text-xs text-emerald-700 font-bold bg-emerald-50 p-2 rounded text-center">✓ Trabajo Finalizado (${order.tiempos})</p>`;
           }
         }
 
@@ -414,8 +452,8 @@
           cardHtml += `
             <div class="bg-slate-50 p-3 rounded-lg text-xs space-y-2 border border-slate-200">
               <div class="flex justify-between items-center text-slate-500">
-                <span>Tiempos: <strong>${order.tiempos}</strong></span>
-                <span>Consumos: <strong>${order.consumos}</strong></span>
+                <span>Tiempo Total: <strong>${order.tiempos}</strong></span>
+                <span>Consumos: <strong>${order.consumos || 'Ninguno'}</strong></span>
               </div>
 
               <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2 border-t border-slate-200">
@@ -442,7 +480,7 @@
               </div>
 
               <div class="pt-2 flex justify-end">
-                <button onclick="sendWhatsApp('${order.id}')" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2 rounded-lg text-xs flex items-center gap-1.5 shadow">
+                <button onclick="sendWhatsAppClient('${order.id}')" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2 rounded-lg text-xs flex items-center gap-1.5 shadow">
                   <i class="fa-brands fa-whatsapp text-sm"></i> Notificar Cliente por WhatsApp
                 </button>
               </div>
