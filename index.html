@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Control de Producción - Fastmark</title>
+  <title>Control de producción FM</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
@@ -13,34 +13,34 @@
 </head>
 <body class="pb-16">
 
-  <!-- ENCABEZADO -->
+  <!-- ENCABEZADO Y SELECTOR DE USUARIOS -->
   <header class="bg-slate-900 text-white p-4 shadow-lg sticky top-0 z-50">
     <div class="max-w-4xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-3">
       <div>
         <h1 class="text-xl font-black tracking-wide flex items-center gap-2">
-          <i class="fa-solid fa-boxes-packing text-amber-400"></i> FASTMARK CONTROL
+          <i class="fa-solid fa-industry text-amber-400"></i> Control de producción FM
         </h1>
-        <p class="text-xs text-slate-400">Gestión de Pegue, Impresión y Plastificado</p>
+        <p class="text-xs text-slate-400">Sedes: Centro & Estrada</p>
       </div>
 
-      <!-- Selector de Rol -->
+      <!-- Selector de Perfil / Usuario -->
       <div class="flex items-center bg-slate-800 p-1.5 rounded-lg border border-slate-700">
-        <span class="text-xs mr-2 text-slate-300 font-medium">Modo:</span>
-        <button id="btnRoleAdmin" onclick="setRole('admin')" class="px-3 py-1 rounded text-xs font-bold transition-all bg-blue-600 text-white shadow">
-          <i class="fa-solid fa-user-shield mr-1"></i> Administrador
-        </button>
-        <button id="btnRoleOp" onclick="setRole('operario')" class="px-3 py-1 rounded text-xs font-bold transition-all text-slate-400 hover:text-white">
-          <i class="fa-solid fa-helmet-safety mr-1"></i> Operario
-        </button>
+        <span class="text-xs mr-2 text-slate-300 font-medium">Usuario:</span>
+        <select id="selectUsuario" onchange="cambiarUsuario(this.value)" class="bg-slate-900 text-white text-xs font-bold p-1.5 rounded border border-slate-600 focus:outline-none">
+          <option value="admin">👤 Administrador (Dueño)</option>
+          <option value="milton">🖨️ Milton (Prensista Impresión)</option>
+          <option value="hector">✨ Héctor (Plastificador)</option>
+          <option value="johnatan">📦 Johnatan (Pegue de Cajas)</option>
+        </select>
       </div>
     </div>
   </header>
 
   <main class="max-w-4xl mx-auto p-4 space-y-6">
 
-    <!-- AVISO DE VISTA -->
+    <!-- AVISO DINÁMICO DE PERFIL -->
     <div id="roleNotice" class="p-3 bg-blue-50 border-l-4 border-blue-500 text-blue-900 rounded-r-lg text-sm flex items-center justify-between shadow-sm">
-      <span><i class="fa-solid fa-info-circle mr-1 text-blue-600"></i> <strong>Modo Administrador:</strong> Control de tarifas, precios editables, medios de pago y envío de cobro por WhatsApp.</span>
+      <!-- Generado por JS -->
     </div>
 
     <!-- SECCIÓN SOLO ADMIN: GESTIÓN DE CLIENTES Y TARIFAS -->
@@ -82,7 +82,7 @@
 
         <p class="text-slate-500 font-semibold">Clientes registrados actualmente:</p>
         <div id="listaTarifas" class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          <!-- Se renderizan clientes dinámicamente -->
+          <!-- Render dinámico -->
         </div>
       </div>
     </section>
@@ -94,10 +94,10 @@
       </h2>
       <form id="formNewOrder" onsubmit="handleCreateOrder(event)" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label class="block text-xs font-semibold text-slate-600 mb-1">Local / Sede</label>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Sede / Local</label>
           <select id="inputLocal" class="w-full p-2 border rounded-lg text-xs bg-slate-50" required>
-            <option value="Planta Pegue Cajas">Planta - Pegue de Cajas</option>
-            <option value="Local Impresión / Plastificado">Local - Impresión / Plastificado</option>
+            <option value="Centro">Centro</option>
+            <option value="Estrada">Estrada</option>
           </select>
         </div>
         <div>
@@ -107,7 +107,7 @@
         <div>
           <label class="block text-xs font-semibold text-slate-600 mb-1">Cliente</label>
           <select id="inputCliente" onchange="actualizarPrecioEstimado()" class="w-full p-2 border rounded-lg text-xs bg-slate-50" required>
-            <!-- Se llena dinámicamente -->
+            <!-- Dinámico -->
           </select>
         </div>
         <div>
@@ -115,13 +115,12 @@
           <input type="tel" id="inputTel" placeholder="Ej. 3001234567" class="w-full p-2 border rounded-lg text-xs" required>
         </div>
 
-        <!-- SELECCIÓN DE PROCESO PRINCIPAL -->
         <div>
-          <label class="block text-xs font-bold text-indigo-900 mb-1">Tipo de Proceso</label>
+          <label class="block text-xs font-bold text-indigo-900 mb-1">Tipo de Proceso (Asigna el Operario)</label>
           <select id="inputTipoProceso" onchange="onChangeTipoProceso()" class="w-full p-2 border rounded-lg text-xs bg-indigo-50 font-bold text-indigo-900" required>
-            <option value="Impresión">Impresión</option>
-            <option value="Plastificado">Plastificado</option>
-            <option value="Pegue de cajas">Pegue de cajas</option>
+            <option value="Impresión">Impresión (Operario: Milton)</option>
+            <option value="Plastificado">Plastificado (Operario: Héctor)</option>
+            <option value="Pegue de cajas">Pegue de cajas (Operario: Johnatan)</option>
           </select>
         </div>
 
@@ -130,9 +129,8 @@
           <input type="number" id="inputCantidad" onkeyup="actualizarPrecioEstimado()" placeholder="Ej. 5000" class="w-full p-2 border rounded-lg text-xs" required>
         </div>
 
-        <!-- CAMPOS DINÁMICOS SEGÚN EL PROCESO ELEGIDO -->
+        <!-- CAMPOS DINÁMICOS POR PROCESO -->
         <div id="containerDinamico" class="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-50 p-3 rounded-lg border border-slate-200">
-          <!-- Se llenan por JS según la opción seleccionada -->
         </div>
 
         <div class="sm:col-span-2 bg-slate-100 p-3 rounded-lg border border-slate-300 flex justify-between items-center">
@@ -147,24 +145,25 @@
       </form>
     </section>
 
-    <!-- LISTA DE TRABAJOS EN CURSO -->
+    <!-- LISTA DE TRABAJOS SEGÚN PERFIL -->
     <section class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
       <div class="flex justify-between items-center mb-4">
         <h2 class="text-base font-bold text-slate-800 flex items-center gap-2">
-          <i class="fa-solid fa-list-check text-slate-700"></i> Estado de Órdenes
+          <i class="fa-solid fa-list-check text-slate-700"></i> Órdenes de Producción
         </h2>
         <span id="orderCount" class="text-xs bg-slate-100 font-bold px-2.5 py-1 rounded-full text-slate-600">0 Órdenes</span>
       </div>
 
       <div id="ordersContainer" class="space-y-4">
-        <!-- Render dinámico -->
+        <!-- Render dinámico de tarjetas -->
       </div>
     </section>
 
   </main>
 
   <script>
-    let currentRole = 'admin';
+    let currentUser = 'admin'; // 'admin', 'milton', 'hector', 'johnatan'
+    const PIN_ADMIN = "1234"; // PIN de seguridad para ingresar como Administrador
     const CELULAR_JEFE = "573115926645";
     let timerInterval = null;
 
@@ -185,6 +184,7 @@
       renderClientesSelect();
       renderTarifas();
       onChangeTipoProceso();
+      updateNotice();
       renderOrders();
 
       if (timerInterval) clearInterval(timerInterval);
@@ -207,7 +207,45 @@
       return `${hours > 0 ? hours + 'h ' : ''}${minutes}m ${seconds}s`;
     }
 
-    // CAMBIO DINÁMICO DE FORMULARIO SEGÚN PROCESO
+    function cambiarUsuario(usuario) {
+      if (usuario === 'admin') {
+        const pinIngresado = prompt("Ingresa el PIN de Administrador:");
+        if (pinIngresado !== PIN_ADMIN) {
+          alert("PIN incorrecto. No tienes acceso a las funciones administrativas.");
+          document.getElementById('selectUsuario').value = currentUser;
+          return;
+        }
+      }
+      currentUser = usuario;
+      updateNotice();
+      renderOrders();
+    }
+
+    function updateNotice() {
+      const notice = document.getElementById('roleNotice');
+      const secCreate = document.getElementById('sectionCreateOrder');
+      const secTarifas = document.getElementById('sectionTarifas');
+
+      if (currentUser === 'admin') {
+        secCreate.classList.remove('hidden');
+        secTarifas.classList.remove('hidden');
+        notice.className = "p-3 bg-blue-50 border-l-4 border-blue-500 text-blue-900 rounded-r-lg text-sm shadow-sm";
+        notice.innerHTML = `<span><i class="fa-solid fa-user-shield text-blue-600 mr-1"></i> <strong>Modo Administrador:</strong> Control de órdenes, tarifas, cobros e historial completo.</span>`;
+      } else {
+        secCreate.classList.add('hidden');
+        secTarifas.classList.add('hidden');
+        notice.className = "p-3 bg-emerald-50 border-l-4 border-emerald-500 text-emerald-900 rounded-r-lg text-sm shadow-sm";
+        
+        if (currentUser === 'milton') {
+          notice.innerHTML = `<span><i class="fa-solid fa-print text-emerald-600 mr-1"></i> <strong>Operario Milton:</strong> Visualizando únicamente órdenes de <strong>Impresión</strong>.</span>`;
+        } else if (currentUser === 'hector') {
+          notice.innerHTML = `<span><i class="fa-solid fa-layer-group text-emerald-600 mr-1"></i> <strong>Operario Héctor:</strong> Visualizando únicamente órdenes de <strong>Plastificado</strong>.</span>`;
+        } else if (currentUser === 'johnatan') {
+          notice.innerHTML = `<span><i class="fa-solid fa-box-open text-emerald-600 mr-1"></i> <strong>Operario Johnatan:</strong> Visualizando únicamente órdenes de <strong>Pegue de cajas</strong>.</span>`;
+        }
+      }
+    }
+
     function onChangeTipoProceso() {
       const tipo = document.getElementById('inputTipoProceso').value;
       const container = document.getElementById('containerDinamico');
@@ -250,32 +288,6 @@
             </select>
           </div>`;
       }
-    }
-
-    function setRole(role) {
-      currentRole = role;
-      const btnAdmin = document.getElementById('btnRoleAdmin');
-      const btnOp = document.getElementById('btnRoleOp');
-      const secCreate = document.getElementById('sectionCreateOrder');
-      const secTarifas = document.getElementById('sectionTarifas');
-      const notice = document.getElementById('roleNotice');
-
-      if (role === 'admin') {
-        btnAdmin.className = "px-3 py-1 rounded text-xs font-bold transition-all bg-blue-600 text-white shadow";
-        btnOp.className = "px-3 py-1 rounded text-xs font-bold transition-all text-slate-400 hover:text-white";
-        secCreate.classList.remove('hidden');
-        secTarifas.classList.remove('hidden');
-        notice.className = "p-3 bg-blue-50 border-l-4 border-blue-500 text-blue-900 rounded-r-lg text-sm shadow-sm";
-        notice.innerHTML = `<span><i class="fa-solid fa-info-circle mr-1 text-blue-600"></i> <strong>Modo Administrador:</strong> Control de tarifas, precios editables, medios de pago y envío de cobro por WhatsApp.</span>`;
-      } else {
-        btnOp.className = "px-3 py-1 rounded text-xs font-bold transition-all bg-emerald-600 text-white shadow";
-        btnAdmin.className = "px-3 py-1 rounded text-xs font-bold transition-all text-slate-400 hover:text-white";
-        secCreate.classList.add('hidden');
-        secTarifas.classList.add('hidden');
-        notice.className = "p-3 bg-emerald-50 border-l-4 border-emerald-500 text-emerald-900 rounded-r-lg text-sm shadow-sm";
-        notice.innerHTML = `<span><i class="fa-solid fa-helmet-safety mr-1 text-emerald-600"></i> <strong>Modo Operario:</strong> Presiona "Iniciar Trabajo" al arrancar y "Terminar Trabajo" al finalizar para avisar al jefe.</span>`;
-      }
-      renderOrders();
     }
 
     function toggleTarifasForm() {
@@ -402,7 +414,7 @@
       document.getElementById('formNewOrder').reset();
       onChangeTipoProceso();
       renderOrders();
-      alert(`Orden ${newOrder.id} registrada.`);
+      alert(`Orden ${newOrder.id} registrada exitosamente.`);
     }
 
     function startJob(id) {
@@ -434,7 +446,6 @@
         saveStorage();
         renderOrders();
 
-        // Enviar alerta por WhatsApp al celular del jefe (311 592 6645)
         const msjJefe = `🚨 *TRABAJO TERMINADO EN PLANTA*%0A%0A📄 *Orden:* ${order.id}%0A📌 *Remisión N°:* ${order.remision}%0A🏢 *Sede:* ${order.local}%0A👤 *Cliente:* ${order.cliente}%0A⚙️ *Proceso:* ${order.trabajo}%0A📦 *Cantidad:* ${order.cantidad.toLocaleString('es-CO')} unds%0A⏱️ *Tiempo Total Laborado:* ${order.tiempos}%0A🧪 *Consumos:* ${order.consumos || 'Ninguno registrado'}%0A%0AYa puedes ingresar a la app para efectuar la liquidación y enviar la notificación al cliente.`;
 
         const urlJefe = `https://wa.me/${CELULAR_JEFE}?text=${msjJefe}`;
@@ -457,7 +468,7 @@
 
       const estadoPagoTxt = order.pagado ? `✅ *PAGADO* (${order.medioPago})` : `⏳ *PENDIENTE DE PAGO*`;
 
-      const mensaje = `Hola *${order.cliente}*! 👋%0A%0ATe informamos que tu pedido (*${order.trabajo}*) correspondiente a la Remisión *N° ${order.remision}* ya está terminado y listo para entregar/recoger.%0A%0A📦 *Cantidad:* ${order.cantidad.toLocaleString('es-CO')} unds%0A💵 *Valor a cancelar:* $${Number(order.valorCalculado).toLocaleString('es-CO')} COP%0A📌 *Estado Pago:* ${estadoPagoTxt}%0A%0AQuedamos atentos a tu confirmación. ¡Muchas gracias por elegir *Fastmark*!`;
+      const mensaje = `Hola *${order.cliente}*! 👋%0A%0ATe informamos que tu pedido (*${order.trabajo}*) correspondiente a la Remisión *N° ${order.remision}* ya está terminado y listo para entregar/recoger.%0A%0A📦 *Cantidad:* ${order.cantidad.toLocaleString('es-CO')} unds%0A💵 *Valor a cancelar:* $${Number(order.valorCalculado).toLocaleString('es-CO')} COP%0A📌 *Estado Pago:* ${estadoPagoTxt}%0A%0AQuedamos atentos a tu confirmación. ¡Muchas gracias por elegir *FM*!`;
 
       const url = `https://wa.me/${order.telefono}?text=${mensaje}`;
       window.open(url, '_blank');
@@ -466,10 +477,26 @@
 
     function renderOrders() {
       const container = document.getElementById('ordersContainer');
-      document.getElementById('orderCount').innerText = `${orders.length} Órdenes`;
+      
+      // FILTRAR ÓRDENES SEGÚN EL USUARIO ACTUAL
+      let filteredOrders = orders;
+      if (currentUser === 'milton') {
+        filteredOrders = orders.filter(o => o.proceso === 'Impresión');
+      } else if (currentUser === 'hector') {
+        filteredOrders = orders.filter(o => o.proceso === 'Plastificado');
+      } else if (currentUser === 'johnatan') {
+        filteredOrders = orders.filter(o => o.proceso === 'Pegue de cajas');
+      }
+
+      document.getElementById('orderCount').innerText = `${filteredOrders.length} Órdenes`;
       container.innerHTML = "";
 
-      orders.forEach(order => {
+      if (filteredOrders.length === 0) {
+        container.innerHTML = `<div class="text-center p-8 text-slate-400 text-xs">No hay órdenes asignadas para este perfil actualmente.</div>`;
+        return;
+      }
+
+      filteredOrders.forEach(order => {
         let badgeColor = "bg-slate-200 text-slate-700";
         if (order.estado === 'En Ejecución') badgeColor = "bg-amber-100 text-amber-800 border border-amber-300 font-bold animate-pulse";
         if (order.estado === 'Terminado') badgeColor = "bg-emerald-100 text-emerald-800 border border-emerald-400 font-bold";
@@ -481,7 +508,7 @@
               <div>
                 <span class="font-extrabold text-slate-800 text-sm">${order.id}</span>
                 <span class="text-xs bg-slate-100 font-semibold text-slate-600 px-2 py-0.5 rounded ml-2">${order.remision}</span>
-                <span class="text-xs text-slate-400 block sm:inline sm:ml-2">(${order.local})</span>
+                <span class="text-xs text-indigo-600 font-bold block sm:inline sm:ml-2">(Sede: ${order.local})</span>
               </div>
               <span class="badge ${badgeColor}">${order.estado.toUpperCase()}</span>
             </div>
@@ -493,8 +520,8 @@
               <p><strong>Tiempo Registrado:</strong> <span class="font-bold text-slate-800" id="timer-${order.id}">${order.tiempos}</span></p>
             </div>`;
 
-        // VISTA OPERARIO
-        if (currentRole === 'operario') {
+        // VISTA PARA CUALQUIERA DE LOS OPERARIOS
+        if (currentUser !== 'admin') {
           if (order.estado === 'Pendiente') {
             cardHtml += `
               <button onclick="startJob('${order.id}')" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-lg text-xs flex items-center justify-center gap-2 shadow">
@@ -507,11 +534,11 @@
                   <i class="fa-solid fa-spinner fa-spin text-amber-600"></i> Producción en curso...
                 </p>
                 <div>
-                  <label class="block text-[11px] text-slate-600 font-semibold mb-1">Consumos / Adhesivos / Insumos:</label>
-                  <input type="text" id="consumo-${order.id}" placeholder="Ej. 2.5 kg Pega PVA" value="${order.consumos}" class="w-full p-1.5 border rounded text-xs bg-white">
+                  <label class="block text-[11px] text-slate-600 font-semibold mb-1">Consumos / Insumos:</label>
+                  <input type="text" id="consumo-${order.id}" placeholder="Ej. 2.5 kg Pega PVA / 1 Rollo Polipropileno" value="${order.consumos}" class="w-full p-1.5 border rounded text-xs bg-white">
                 </div>
                 <button onclick="finishJob('${order.id}')" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-lg text-xs flex items-center justify-center gap-2 shadow">
-                  <i class="fa-solid fa-stop"></i> Terminar Trabajo y Enviar Alerta al Jefe
+                  <i class="fa-solid fa-stop"></i> Terminar Trabajo y Avisar al Jefe
                 </button>
               </div>`;
           } else {
@@ -519,7 +546,7 @@
           }
         }
 
-        // VISTA ADMINISTRADOR
+        // VISTA ADMINISTRADOR (DUEÑO)
         else {
           cardHtml += `
             <div class="bg-slate-50 p-3 rounded-lg text-xs space-y-2 border border-slate-200">
