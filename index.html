@@ -43,20 +43,47 @@
       <span><i class="fa-solid fa-info-circle mr-1 text-blue-600"></i> <strong>Modo Administrador:</strong> Control de tarifas, precios editables, medios de pago y envío de cobro por WhatsApp.</span>
     </div>
 
-    <!-- SECCIÓN SOLO ADMIN: TARIFAS POR CLIENTE -->
+    <!-- SECCIÓN SOLO ADMIN: GESTIÓN DE CLIENTES Y TARIFAS -->
     <section id="sectionTarifas" class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
       <div class="flex justify-between items-center mb-3">
         <h2 class="text-base font-bold text-slate-800 flex items-center gap-2">
-          <i class="fa-solid fa-tags text-indigo-600"></i> Lista de Precios Especiales por Cliente
+          <i class="fa-solid fa-users text-indigo-600"></i> Lista de Clientes y Precios
         </h2>
         <button onclick="toggleTarifasForm()" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1 rounded-lg font-bold">
-          <i class="fa-solid fa-gear mr-1"></i> Configurar Precios
+          <i class="fa-solid fa-gear mr-1"></i> Configurar / Agregar Clientes
         </button>
       </div>
-      <div id="tarifasContent" class="hidden text-xs space-y-2 border-t pt-3">
-        <p class="text-slate-500">Configura el precio unitario base o valor mínimo por cliente:</p>
+
+      <div id="tarifasContent" class="hidden text-xs space-y-4 border-t pt-3">
+        <!-- FORMULARIO PARA AGREGAR NUEVO CLIENTE -->
+        <form id="formAddCliente" onsubmit="guardarNuevoCliente(event)" class="bg-slate-50 p-3 rounded-lg border border-slate-200 space-y-3">
+          <p class="font-bold text-slate-700"><i class="fa-solid fa-user-plus mr-1 text-blue-600"></i> Agregar o Modificar Cliente:</p>
+          <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2">
+            <div>
+              <label class="block text-slate-600 font-semibold mb-1">Nombre Cliente</label>
+              <input type="text" id="cliNombre" placeholder="Ej. Empaques Caribe" class="w-full p-2 border rounded bg-white text-xs" required>
+            </div>
+            <div>
+              <label class="block text-slate-600 font-semibold mb-1">WhatsApp (Sin +57)</label>
+              <input type="tel" id="cliTel" placeholder="Ej. 3001234567" class="w-full p-2 border rounded bg-white text-xs" required>
+            </div>
+            <div>
+              <label class="block text-slate-600 font-semibold mb-1">Precio x Unidad ($)</label>
+              <input type="number" id="cliTarifa" placeholder="Ej. 25" class="w-full p-2 border rounded bg-white text-xs" required>
+            </div>
+            <div>
+              <label class="block text-slate-600 font-semibold mb-1">Valor Mínimo ($)</label>
+              <input type="number" id="cliMinima" placeholder="Ej. 70000" class="w-full p-2 border rounded bg-white text-xs" required>
+            </div>
+          </div>
+          <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2 rounded text-xs transition-all shadow">
+            Guardar Cliente en Lista
+          </button>
+        </form>
+
+        <p class="text-slate-500 font-semibold">Clientes registrados actualmente:</p>
         <div id="listaTarifas" class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          <!-- Se renderizan clientes y tarifas -->
+          <!-- Se renderizan clientes y tarifas dinámicamente -->
         </div>
       </div>
     </section>
@@ -81,7 +108,7 @@
         <div>
           <label class="block text-xs font-semibold text-slate-600 mb-1">Cliente</label>
           <select id="inputCliente" onchange="actualizarPrecioEstimado()" class="w-full p-2 border rounded-lg text-xs bg-slate-50" required>
-            <!-- Se llena dinámicamente desde la lista de tarifas -->
+            <!-- Se llena dinámicamente -->
           </select>
         </div>
         <div>
@@ -127,14 +154,15 @@
   <script>
     let currentRole = 'admin';
 
-    // Lista de tarifas base por cliente
-    let tarifasClientes = {
+    // Cargar tarifas de localStorage o valores por defecto
+    let tarifasClientes = JSON.parse(localStorage.getItem('fastmark_tarifas')) || {
       "Cliente General": { tarifaUnidad: 25, minima: 70000, tel: "3000000000" },
       "Empaques del Caribe": { tarifaUnidad: 22, minima: 65000, tel: "3001234567" },
       "Diseños & Impresos": { tarifaUnidad: 30, minima: 90000, tel: "3159876543" }
     };
 
-    let orders = [
+    // Cargar órdenes de localStorage o iniciales
+    let orders = JSON.parse(localStorage.getItem('fastmark_orders')) || [
       {
         id: "OP-101",
         local: "Planta Pegue Cajas",
@@ -143,7 +171,7 @@
         telefono: "573001234567",
         trabajo: "5,000 Pegue Lateral",
         cantidad: 5000,
-        estado: "Terminado", // 'En Proceso', 'Terminado', 'Liquidado'
+        estado: "Terminado",
         tiempos: "1h 15m",
         consumos: "2 Kg Pega PVA",
         valorCalculado: 110000,
@@ -151,6 +179,11 @@
         medioPago: "Pendiente"
       }
     ];
+
+    function saveStorage() {
+      localStorage.setItem('fastmark_tarifas', JSON.stringify(tarifasClientes));
+      localStorage.setItem('fastmark_orders', JSON.stringify(orders));
+    }
 
     function init() {
       renderClientesSelect();
@@ -189,6 +222,37 @@
       content.classList.toggle('hidden');
     }
 
+    function guardarNuevoCliente(e) {
+      e.preventDefault();
+      const nombre = document.getElementById('cliNombre').value.trim();
+      const tel = document.getElementById('cliTel').value.trim().replace(/\D/g,'');
+      const tarifa = parseFloat(document.getElementById('cliTarifa').value) || 0;
+      const minima = parseFloat(document.getElementById('cliMinima').value) || 0;
+
+      if (!nombre) return;
+
+      tarifasClientes[nombre] = {
+        tarifaUnidad: tarifa,
+        minima: minima,
+        tel: tel
+      };
+
+      saveStorage();
+      renderClientesSelect();
+      renderTarifas();
+      document.getElementById('formAddCliente').reset();
+      alert(`Cliente "${nombre}" guardado correctamente.`);
+    }
+
+    function eliminarCliente(nombre) {
+      if (confirm(`¿Deseas eliminar a "${nombre}" de la lista?`)) {
+        delete tarifasClientes[nombre];
+        saveStorage();
+        renderClientesSelect();
+        renderTarifas();
+      }
+    }
+
     function renderClientesSelect() {
       const select = document.getElementById('inputCliente');
       select.innerHTML = "";
@@ -203,9 +267,18 @@
       container.innerHTML = "";
       Object.entries(tarifasClientes).forEach(([cli, data]) => {
         container.innerHTML += `
-          <div class="bg-slate-50 p-2 rounded border border-slate-200 flex justify-between items-center">
-            <span class="font-bold text-slate-700">${cli}</span>
-            <span class="text-slate-600">$${data.tarifaUnidad}/und (Min: $${data.minima.toLocaleString('es-CO')})</span>
+          <div class="bg-slate-50 p-2.5 rounded border border-slate-200 flex justify-between items-center">
+            <div>
+              <p class="font-bold text-slate-800">${cli}</p>
+              <p class="text-slate-500 text-[10px]">Tel: ${data.tel || 'Sin registrado'}</p>
+            </div>
+            <div class="text-right">
+              <span class="font-bold text-indigo-700">$${data.tarifaUnidad}/und</span>
+              <p class="text-[10px] text-slate-500">Mín: $${data.minima.toLocaleString('es-CO')}</p>
+            </div>
+            <button onclick="eliminarCliente('${cli}')" class="text-red-500 hover:text-red-700 ml-2 p-1">
+              <i class="fa-solid fa-trash"></i>
+            </button>
           </div>`;
       });
     }
@@ -216,7 +289,7 @@
       const telInput = document.getElementById('inputTel');
 
       if (tarifasClientes[cli]) {
-        telInput.value = tarifasClientes[cli].tel;
+        telInput.value = tarifasClientes[cli].tel || '';
         const tarifa = tarifasClientes[cli];
         let valor = cant * tarifa.tarifaUnidad;
         if (valor < tarifa.minima && cant > 0) valor = tarifa.minima;
@@ -251,6 +324,7 @@
       };
 
       orders.unshift(newOrder);
+      saveStorage();
       document.getElementById('formNewOrder').reset();
       renderOrders();
       alert(`Orden ${newOrder.id} registrada con Remisión ${newOrder.remision}`);
@@ -260,6 +334,7 @@
       const order = orders.find(o => o.id === id);
       if (order) {
         order.estado = 'Terminado';
+        saveStorage();
         renderOrders();
         alert(`¡Orden ${id} finalizada! Se ha generado la notificación para el Administrador.`);
       }
@@ -276,6 +351,7 @@
       if (medioSelect) order.medioPago = medioSelect.value;
 
       order.estado = 'Liquidado';
+      saveStorage();
 
       const estadoPagoTxt = order.pagado ? `✅ *PAGADO* (${order.medioPago})` : `⏳ *PENDIENTE DE PAGO*`;
 
@@ -320,8 +396,8 @@
             <div class="bg-slate-50 p-2.5 rounded-lg text-xs space-y-1">
               <p><strong>Reportar Tiempos / Consumos:</strong></p>
               <div class="grid grid-cols-2 gap-2">
-                <input type="text" placeholder="Ej. 1h 20m" value="${order.tiempos !== 'Sin registrar' ? order.tiempos : ''}" onchange="order.tiempos=this.value" class="p-1 border rounded bg-white">
-                <input type="text" placeholder="Ej. 2.5 kg pega" value="${order.consumos !== 'Sin registrar' ? order.consumos : ''}" onchange="order.consumos=this.value" class="p-1 border rounded bg-white">
+                <input type="text" placeholder="Ej. 1h 20m" value="${order.tiempos !== 'Sin registrar' ? order.tiempos : ''}" onchange="order.tiempos=this.value; saveStorage();" class="p-1 border rounded bg-white">
+                <input type="text" placeholder="Ej. 2.5 kg pega" value="${order.consumos !== 'Sin registrar' ? order.consumos : ''}" onchange="order.consumos=this.value; saveStorage();" class="p-1 border rounded bg-white">
               </div>
             </div>`;
 
