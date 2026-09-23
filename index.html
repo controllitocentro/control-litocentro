@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Control de Producción - Litocentro</title>
+  <title>Control de Producción - Fastmark</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
@@ -114,15 +114,28 @@
           <label class="block text-xs font-semibold text-slate-600 mb-1">Teléfono WhatsApp Cliente</label>
           <input type="tel" id="inputTel" placeholder="Ej. 3001234567" class="w-full p-2 border rounded-lg text-xs" required>
         </div>
+
+        <!-- SELECCIÓN DE PROCESO PRINCIPAL -->
         <div>
-          <label class="block text-xs font-semibold text-slate-600 mb-1">Proceso / Trabajo</label>
-          <input type="text" id="inputTrabajo" placeholder="Ej. Pegue Lateral / Plastificado Mate" class="w-full p-2 border rounded-lg text-xs" required>
+          <label class="block text-xs font-bold text-indigo-900 mb-1">Tipo de Proceso</label>
+          <select id="inputTipoProceso" onchange="onChangeTipoProceso()" class="w-full p-2 border rounded-lg text-xs bg-indigo-50 font-bold text-indigo-900" required>
+            <option value="Impresión">Impresión</option>
+            <option value="Plastificado">Plastificado</option>
+            <option value="Pegue de cajas">Pegue de cajas</option>
+          </select>
         </div>
+
         <div>
           <label class="block text-xs font-semibold text-slate-600 mb-1">Cantidad (Unidades)</label>
           <input type="number" id="inputCantidad" onkeyup="actualizarPrecioEstimado()" placeholder="Ej. 5000" class="w-full p-2 border rounded-lg text-xs" required>
         </div>
-        <div class="sm:col-span-2 bg-slate-50 p-3 rounded-lg border border-slate-200 flex justify-between items-center">
+
+        <!-- CAMPOS DINÁMICOS SEGÚN EL PROCESO ELEGIDO -->
+        <div id="containerDinamico" class="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-50 p-3 rounded-lg border border-slate-200">
+          <!-- Se llenan por JS según la opción seleccionada -->
+        </div>
+
+        <div class="sm:col-span-2 bg-slate-100 p-3 rounded-lg border border-slate-300 flex justify-between items-center">
           <div>
             <span class="text-xs text-slate-500 font-semibold">Valor Sugerido (Según Cliente):</span>
             <div id="precioSugeridoTxt" class="text-sm font-bold text-indigo-700">$0 COP</div>
@@ -152,7 +165,7 @@
 
   <script>
     let currentRole = 'admin';
-    const CELULAR_JEFE = "573115926645"; // Tu número registrado para recibir alertas
+    const CELULAR_JEFE = "573115926645";
     let timerInterval = null;
 
     let tarifasClientes = JSON.parse(localStorage.getItem('fastmark_tarifas')) || {
@@ -171,15 +184,13 @@
     function init() {
       renderClientesSelect();
       renderTarifas();
+      onChangeTipoProceso();
       renderOrders();
 
-      // Actualizar cronómetro activo en pantalla cada segundo
       if (timerInterval) clearInterval(timerInterval);
       timerInterval = setInterval(() => {
-        let activeTimer = false;
         orders.forEach(o => {
           if (o.estado === 'En Ejecución' && o.startTime) {
-            activeTimer = true;
             const diffMs = new Date() - new Date(o.startTime);
             const el = document.getElementById(`timer-${o.id}`);
             if (el) el.innerText = formatDuration(diffMs);
@@ -194,6 +205,51 @@
       const minutes = Math.floor((totalSec % 3600) / 60);
       const seconds = totalSec % 60;
       return `${hours > 0 ? hours + 'h ' : ''}${minutes}m ${seconds}s`;
+    }
+
+    // CAMBIO DINÁMICO DE FORMULARIO SEGÚN PROCESO
+    function onChangeTipoProceso() {
+      const tipo = document.getElementById('inputTipoProceso').value;
+      const container = document.getElementById('containerDinamico');
+      container.innerHTML = "";
+
+      if (tipo === 'Impresión') {
+        container.innerHTML = `
+          <div class="sm:col-span-2">
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Observaciones de Impresión</label>
+            <input type="text" id="inputObs" placeholder="Ej. Papel propalcote 150g, impresión tiro y retiro" class="w-full p-2 border rounded text-xs bg-white">
+          </div>`;
+      } else if (tipo === 'Plastificado') {
+        container.innerHTML = `
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Tipo de Plástico</label>
+            <select id="inputTipoPlastico" class="w-full p-2 border rounded text-xs bg-white font-semibold">
+              <option value="Plástico corriente">Plástico corriente</option>
+              <option value="Plástico Dry brillante">Plástico Dry brillante</option>
+              <option value="Plástico Mate">Plástico Mate</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Observaciones de Plastificado</label>
+            <input type="text" id="inputObs" placeholder="Ej. Plastificado una sola cara" class="w-full p-2 border rounded text-xs bg-white">
+          </div>`;
+      } else if (tipo === 'Pegue de cajas') {
+        container.innerHTML = `
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Tipo de Pegue</label>
+            <select id="inputTipoPegue" class="w-full p-2 border rounded text-xs bg-white font-semibold">
+              <option value="Pegue lateral">Pegue lateral</option>
+              <option value="Pegue automático">Pegue automático</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Tipo de Pegante</label>
+            <select id="inputTipoPegante" class="w-full p-2 border rounded text-xs bg-white font-semibold">
+              <option value="Pegante normal">Pegante normal</option>
+              <option value="Pegante especial">Pegante especial</option>
+            </select>
+          </div>`;
+      }
     }
 
     function setRole(role) {
@@ -305,15 +361,33 @@
       let valCalc = cant * tarifa.tarifaUnidad;
       if (valCalc < tarifa.minima && cant > 0) valCalc = tarifa.minima;
 
+      const tipoProceso = document.getElementById('inputTipoProceso').value;
+      let detalleTrabajo = tipoProceso;
+
+      if (tipoProceso === 'Impresión') {
+        const obs = document.getElementById('inputObs').value;
+        if (obs) detalleTrabajo += ` (${obs})`;
+      } else if (tipoProceso === 'Plastificado') {
+        const plast = document.getElementById('inputTipoPlastico').value;
+        const obs = document.getElementById('inputObs').value;
+        detalleTrabajo += ` - ${plast}`;
+        if (obs) detalleTrabajo += ` (${obs})`;
+      } else if (tipoProceso === 'Pegue de cajas') {
+        const pegue = document.getElementById('inputTipoPegue').value;
+        const pegante = document.getElementById('inputTipoPegante').value;
+        detalleTrabajo += ` - ${pegue} (${pegante})`;
+      }
+
       const newOrder = {
         id: "OP-" + Math.floor(100 + Math.random() * 900),
         local: document.getElementById('inputLocal').value,
         remision: document.getElementById('inputRemision').value,
         cliente: cli,
         telefono: "57" + document.getElementById('inputTel').value.replace(/\D/g,''),
-        trabajo: document.getElementById('inputTrabajo').value,
+        proceso: tipoProceso,
+        trabajo: detalleTrabajo,
         cantidad: cant,
-        estado: "Pendiente", // 'Pendiente', 'En Ejecución', 'Terminado', 'Liquidado'
+        estado: "Pendiente",
         startTime: null,
         endTime: null,
         tiempos: "Sin iniciar",
@@ -326,11 +400,11 @@
       orders.unshift(newOrder);
       saveStorage();
       document.getElementById('formNewOrder').reset();
+      onChangeTipoProceso();
       renderOrders();
       alert(`Orden ${newOrder.id} registrada.`);
     }
 
-    // ACCIÓN OPERARIO: INICIAR ARRANQUE
     function startJob(id) {
       const order = orders.find(o => o.id === id);
       if (order) {
@@ -341,7 +415,6 @@
       }
     }
 
-    // ACCIÓN OPERARIO: TERMINAR TRABAJO Y NOTIFICAR AL JEFE POR WHATSAPP
     function finishJob(id) {
       const order = orders.find(o => o.id === id);
       if (order) {
@@ -362,14 +435,13 @@
         renderOrders();
 
         // Enviar alerta por WhatsApp al celular del jefe (311 592 6645)
-        const msjJefe = `🚨 *TRABAJO TERMINADO EN PLANTA*%0A%0A📄 *Orden:* ${order.id}%0A📌 *Remisión N°:* ${order.remision}%0A🏢 *Sede:* ${order.local}%0A👤 *Cliente:* ${order.cliente}%0A📦 *Trabajo:* ${order.trabajo} (${order.cantidad.toLocaleString('es-CO')} unds)%0A⏱️ *Tiempo Total Laborado:* ${order.tiempos}%0A🧪 *Consumos:* ${order.consumos || 'Ninguno registrado'}%0A%0AYa puedes ingresar a la app para efectuar la liquidación y enviar la notificación al cliente.`;
+        const msjJefe = `🚨 *TRABAJO TERMINADO EN PLANTA*%0A%0A📄 *Orden:* ${order.id}%0A📌 *Remisión N°:* ${order.remision}%0A🏢 *Sede:* ${order.local}%0A👤 *Cliente:* ${order.cliente}%0A⚙️ *Proceso:* ${order.trabajo}%0A📦 *Cantidad:* ${order.cantidad.toLocaleString('es-CO')} unds%0A⏱️ *Tiempo Total Laborado:* ${order.tiempos}%0A🧪 *Consumos:* ${order.consumos || 'Ninguno registrado'}%0A%0AYa puedes ingresar a la app para efectuar la liquidación y enviar la notificación al cliente.`;
 
         const urlJefe = `https://wa.me/${CELULAR_JEFE}?text=${msjJefe}`;
         window.open(urlJefe, '_blank');
       }
     }
 
-    // ACCIÓN ADMIN: NOTIFICAR COBRO AL CLIENTE
     function sendWhatsAppClient(id) {
       const order = orders.find(o => o.id === id);
       const valInput = document.getElementById(`val-${id}`);
@@ -416,7 +488,7 @@
 
             <div class="grid grid-cols-2 gap-2 text-xs text-slate-600">
               <p><strong>Cliente:</strong> ${order.cliente}</p>
-              <p><strong>Trabajo:</strong> ${order.trabajo}</p>
+              <p><strong>Detalle Proceso:</strong> ${order.trabajo}</p>
               <p><strong>Cantidad:</strong> ${order.cantidad.toLocaleString('es-CO')} unds</p>
               <p><strong>Tiempo Registrado:</strong> <span class="font-bold text-slate-800" id="timer-${order.id}">${order.tiempos}</span></p>
             </div>`;
