@@ -43,6 +43,46 @@
       <!-- Generado por JS -->
     </div>
 
+    <!-- DASHBOARD DE INDICADORES (SOLO ADMINISTRADOR) -->
+    <section id="sectionDashboard" class="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div class="bg-white p-3.5 rounded-xl shadow-sm border border-slate-200">
+        <div class="flex items-center gap-2 text-amber-600 mb-1">
+          <i class="fa-solid fa-hand-holding-dollar text-base"></i>
+          <span class="text-[11px] font-bold text-slate-500 uppercase">Por Cancelar</span>
+        </div>
+        <div id="kpiPorCobrarVal" class="text-base sm:text-lg font-black text-amber-600">$0</div>
+        <span id="kpiPorCobrarCount" class="text-[10px] text-slate-400 font-semibold">0 órdenes pendientes</span>
+      </div>
+
+      <div class="bg-white p-3.5 rounded-xl shadow-sm border border-slate-200">
+        <div class="flex items-center gap-2 text-blue-600 mb-1">
+          <i class="fa-solid fa-boxes-stacked text-base"></i>
+          <span class="text-[11px] font-bold text-slate-500 uppercase">Unidades</span>
+        </div>
+        <div id="kpiUnidadesVal" class="text-base sm:text-lg font-black text-slate-800">0</div>
+        <span class="text-[10px] text-slate-400 font-semibold">Total procesadas</span>
+      </div>
+
+      <div class="bg-white p-3.5 rounded-xl shadow-sm border border-slate-200">
+        <div class="flex items-center gap-2 text-emerald-600 mb-1">
+          <i class="fa-solid fa-stopwatch text-base"></i>
+          <span class="text-[11px] font-bold text-slate-500 uppercase">Tiempo Total</span>
+        </div>
+        <div id="kpiTiempoVal" class="text-base sm:text-lg font-black text-slate-800">0m</div>
+        <span class="text-[10px] text-slate-400 font-semibold">Producción acumulada</span>
+      </div>
+
+      <div class="bg-white p-3.5 rounded-xl shadow-sm border border-slate-200">
+        <div class="flex items-center gap-2 text-indigo-600 mb-1">
+          <i class="fa-solid fa-chart-pie text-base"></i>
+          <span class="text-[11px] font-bold text-slate-500 uppercase">Por Proceso</span>
+        </div>
+        <div id="kpiProcesosResumen" class="text-[10px] font-semibold text-slate-600 leading-tight">
+          🖨️ Imp: 0h<br>✨ Pla: 0h<br>📦 Peg: 0h
+        </div>
+      </div>
+    </section>
+
     <!-- SECCIÓN SOLO ADMIN: GESTIÓN DE CLIENTES Y TARIFAS -->
     <section id="sectionTarifas" class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
       <div class="flex justify-between items-center mb-3">
@@ -145,6 +185,55 @@
       </form>
     </section>
 
+    <!-- FILTROS DE BÚSQUEDA (SOLO ADMINISTRADOR) -->
+    <section id="sectionFiltros" class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 space-y-3">
+      <div class="flex justify-between items-center">
+        <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+          <i class="fa-solid fa-filter text-indigo-600"></i> Filtrar y Buscar Órdenes
+        </h3>
+        <button onclick="limpiarFiltros()" class="text-[11px] text-indigo-600 hover:underline font-semibold">Limpiar Filtros</button>
+      </div>
+
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+        <div>
+          <label class="block text-slate-500 mb-1 font-semibold">Proceso</label>
+          <select id="filterProceso" onchange="renderOrders()" class="w-full p-1.5 border rounded bg-slate-50">
+            <option value="todos">Todos los procesos</option>
+            <option value="Impresión">Impresión</option>
+            <option value="Plastificado">Plastificado</option>
+            <option value="Pegue de cajas">Pegue de cajas</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-slate-500 mb-1 font-semibold">Estado Pago</label>
+          <select id="filterEstadoPago" onchange="renderOrders()" class="w-full p-1.5 border rounded bg-slate-50">
+            <option value="todos">Todos los estados</option>
+            <option value="pendiente">Pendiente de Pago</option>
+            <option value="pagado">Pagado</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-slate-500 mb-1 font-semibold">Medio de Pago</label>
+          <select id="filterMedioPago" onchange="renderOrders()" class="w-full p-1.5 border rounded bg-slate-50">
+            <option value="todos">Todos los medios</option>
+            <option value="Efectivo">Efectivo</option>
+            <option value="Nequi">Nequi</option>
+            <option value="Bancolombia">Bancolombia</option>
+            <option value="Pendiente">Por Cobrar</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-slate-500 mb-1 font-semibold">Cliente</label>
+          <select id="filterCliente" onchange="renderOrders()" class="w-full p-1.5 border rounded bg-slate-50">
+            <!-- Dinámico -->
+          </select>
+        </div>
+      </div>
+    </section>
+
     <!-- LISTA DE TRABAJOS SEGÚN PERFIL -->
     <section class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
       <div class="flex justify-between items-center mb-4">
@@ -162,8 +251,8 @@
   </main>
 
   <script>
-    let currentUser = 'admin'; // 'admin', 'milton', 'hector', 'johnatan'
-    const PIN_ADMIN = "1234"; // PIN de seguridad para ingresar como Administrador
+    let currentUser = 'admin'; 
+    const PIN_ADMIN = "1234"; 
     const CELULAR_JEFE = "573115926645";
     let timerInterval = null;
 
@@ -200,11 +289,23 @@
     }
 
     function formatDuration(ms) {
+      if (!ms || isNaN(ms)) return "0m";
       const totalSec = Math.floor(ms / 1000);
       const hours = Math.floor(totalSec / 3600);
       const minutes = Math.floor((totalSec % 3600) / 60);
-      const seconds = totalSec % 60;
-      return `${hours > 0 ? hours + 'h ' : ''}${minutes}m ${seconds}s`;
+      return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+    }
+
+    function parseDurationToMs(durStr) {
+      if (!durStr || durStr === "Sin iniciar" || durStr === "No cronometrado") return 0;
+      let ms = 0;
+      const hMatch = durStr.match(/(\d+)h/);
+      const mMatch = durStr.match(/(\d+)m/);
+      const sMatch = durStr.match(/(\d+)s/);
+      if (hMatch) ms += parseInt(hMatch[1]) * 3600000;
+      if (mMatch) ms += parseInt(mMatch[1]) * 60000;
+      if (sMatch) ms += parseInt(sMatch[1]) * 1000;
+      return ms;
     }
 
     function cambiarUsuario(usuario) {
@@ -225,15 +326,21 @@
       const notice = document.getElementById('roleNotice');
       const secCreate = document.getElementById('sectionCreateOrder');
       const secTarifas = document.getElementById('sectionTarifas');
+      const secDash = document.getElementById('sectionDashboard');
+      const secFiltros = document.getElementById('sectionFiltros');
 
       if (currentUser === 'admin') {
         secCreate.classList.remove('hidden');
         secTarifas.classList.remove('hidden');
+        secDash.classList.remove('hidden');
+        secFiltros.classList.remove('hidden');
         notice.className = "p-3 bg-blue-50 border-l-4 border-blue-500 text-blue-900 rounded-r-lg text-sm shadow-sm";
-        notice.innerHTML = `<span><i class="fa-solid fa-user-shield text-blue-600 mr-1"></i> <strong>Modo Administrador:</strong> Control de órdenes, tarifas, cobros e historial completo.</span>`;
+        notice.innerHTML = `<span><i class="fa-solid fa-user-shield text-blue-600 mr-1"></i> <strong>Modo Administrador:</strong> Control de órdenes, tarifas, indicadores de producción y cobros.</span>`;
       } else {
         secCreate.classList.add('hidden');
         secTarifas.classList.add('hidden');
+        secDash.classList.add('hidden');
+        secFiltros.classList.add('hidden');
         notice.className = "p-3 bg-emerald-50 border-l-4 border-emerald-500 text-emerald-900 rounded-r-lg text-sm shadow-sm";
         
         if (currentUser === 'milton') {
@@ -244,6 +351,49 @@
           notice.innerHTML = `<span><i class="fa-solid fa-box-open text-emerald-600 mr-1"></i> <strong>Operario Johnatan:</strong> Visualizando únicamente órdenes de <strong>Pegue de cajas</strong>.</span>`;
         }
       }
+    }
+
+    function calcularKPIs() {
+      let totalPorCobrar = 0;
+      let countPorCobrar = 0;
+      let totalUnidades = 0;
+      let totalMsTime = 0;
+
+      let timeImpMs = 0;
+      let timePlaMs = 0;
+      let timePegMs = 0;
+
+      orders.forEach(o => {
+        // Mermas/Unidades
+        if (o.estado === 'Terminado' || o.estado === 'Liquidado') {
+          totalUnidades += (o.cantidad || 0);
+        }
+
+        // Por Cobrar
+        if (!o.pagado && (o.estado === 'Terminado' || o.estado === 'Liquidado')) {
+          totalPorCobrar += (o.valorCalculado || 0);
+          countPorCobrar++;
+        }
+
+        // Tiempos
+        let ms = parseDurationToMs(o.tiempos);
+        totalMsTime += ms;
+
+        if (o.proceso === 'Impresión') timeImpMs += ms;
+        if (o.proceso === 'Plastificado') timePlaMs += ms;
+        if (o.proceso === 'Pegue de cajas') timePegMs += ms;
+      });
+
+      document.getElementById('kpiPorCobrarVal').innerText = `$${totalPorCobrar.toLocaleString('es-CO')}`;
+      document.getElementById('kpiPorCobrarCount').innerText = `${countPorCobrar} órdenes pendientes`;
+      document.getElementById('kpiUnidadesVal').innerText = totalUnidades.toLocaleString('es-CO');
+      document.getElementById('kpiTiempoVal').innerText = formatDuration(totalMsTime);
+
+      document.getElementById('kpiProcesosResumen').innerHTML = `
+        🖨️ Imp: ${formatDuration(timeImpMs)}<br>
+        ✨ Pla: ${formatDuration(timePlaMs)}<br>
+        📦 Peg: ${formatDuration(timePegMs)}
+      `;
     }
 
     function onChangeTipoProceso() {
@@ -322,9 +472,14 @@
 
     function renderClientesSelect() {
       const select = document.getElementById('inputCliente');
+      const filterCli = document.getElementById('filterCliente');
+      
       select.innerHTML = "";
+      filterCli.innerHTML = `<option value="todos">Todos los clientes</option>`;
+
       Object.keys(tarifasClientes).forEach(cli => {
         select.innerHTML += `<option value="${cli}">${cli}</option>`;
+        filterCli.innerHTML += `<option value="${cli}">${cli}</option>`;
       });
       actualizarPrecioEstimado();
     }
@@ -475,10 +630,20 @@
       renderOrders();
     }
 
+    function limpiarFiltros() {
+      document.getElementById('filterProceso').value = "todos";
+      document.getElementById('filterEstadoPago').value = "todos";
+      document.getElementById('filterMedioPago').value = "todos";
+      document.getElementById('filterCliente').value = "todos";
+      renderOrders();
+    }
+
     function renderOrders() {
+      if (currentUser === 'admin') calcularKPIs();
+
       const container = document.getElementById('ordersContainer');
       
-      // FILTRAR ÓRDENES SEGÚN EL USUARIO ACTUAL
+      // 1. FILTRAR POR OPERARIO
       let filteredOrders = orders;
       if (currentUser === 'milton') {
         filteredOrders = orders.filter(o => o.proceso === 'Impresión');
@@ -486,13 +651,27 @@
         filteredOrders = orders.filter(o => o.proceso === 'Plastificado');
       } else if (currentUser === 'johnatan') {
         filteredOrders = orders.filter(o => o.proceso === 'Pegue de cajas');
+      } 
+      
+      // 2. FILTROS AVANZADOS (SÓLO ADMINISTRADOR)
+      else if (currentUser === 'admin') {
+        const fProc = document.getElementById('filterProceso').value;
+        const fEstPag = document.getElementById('filterEstadoPago').value;
+        const fMedPag = document.getElementById('filterMedioPago').value;
+        const fCli = document.getElementById('filterCliente').value;
+
+        if (fProc !== 'todos') filteredOrders = filteredOrders.filter(o => o.proceso === fProc);
+        if (fEstPag === 'pendiente') filteredOrders = filteredOrders.filter(o => !o.pagado);
+        if (fEstPag === 'pagado') filteredOrders = filteredOrders.filter(o => o.pagado);
+        if (fMedPag !== 'todos') filteredOrders = filteredOrders.filter(o => o.medioPago === fMedPag);
+        if (fCli !== 'todos') filteredOrders = filteredOrders.filter(o => o.cliente === fCli);
       }
 
       document.getElementById('orderCount').innerText = `${filteredOrders.length} Órdenes`;
       container.innerHTML = "";
 
       if (filteredOrders.length === 0) {
-        container.innerHTML = `<div class="text-center p-8 text-slate-400 text-xs">No hay órdenes asignadas para este perfil actualmente.</div>`;
+        container.innerHTML = `<div class="text-center p-8 text-slate-400 text-xs">No hay órdenes para mostrar con los filtros seleccionados.</div>`;
         return;
       }
 
@@ -520,7 +699,7 @@
               <p><strong>Tiempo Registrado:</strong> <span class="font-bold text-slate-800" id="timer-${order.id}">${order.tiempos}</span></p>
             </div>`;
 
-        // VISTA PARA CUALQUIERA DE LOS OPERARIOS
+        // VISTA PARA OPERARIOS
         if (currentUser !== 'admin') {
           if (order.estado === 'Pendiente') {
             cardHtml += `
