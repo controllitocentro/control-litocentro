@@ -6,6 +6,35 @@
   <title>Control de producción FM</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Firebase SDK Modules -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getFirestore, collection, onSnapshot, doc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    // CONFIGURACIÓN DE TU PROYECTO DE FIREBASE
+    const firebaseConfig = {
+      apiKey: "TU_API_KEY",
+      authDomain: "TU_PROJECT_ID.firebaseapp.com",
+      projectId: "TU_PROJECT_ID",
+      storageBucket: "TU_PROJECT_ID.appspot.com",
+      messagingSenderId: "TU_SENDER_ID",
+      appId: "TU_APP_ID"
+    };
+
+    // Inicializar Firebase
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // Hacer accesibles las funciones al scope global
+    window.db = db;
+    window.collection = collection;
+    window.onSnapshot = onSnapshot;
+    window.doc = doc;
+    window.setDoc = setDoc;
+    window.deleteDoc = deleteDoc;
+  </script>
+
   <style>
     body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background-color: #f1f5f9; }
     .badge { padding: 4px 10px; border-radius: 9999px; font-size: 0.75rem; font-weight: 700; }
@@ -20,7 +49,7 @@
         <h1 class="text-xl font-black tracking-wide flex items-center gap-2">
           <i class="fa-solid fa-industry text-amber-400"></i> Control de producción FM
         </h1>
-        <p class="text-xs text-slate-400">Sedes: Centro & Estrada</p>
+        <p class="text-xs text-slate-400">Sedes: Centro & Estrada <span id="cloudStatus" class="ml-2 text-emerald-400 font-bold">● Conectado a la Nube</span></p>
       </div>
 
       <div class="flex items-center bg-slate-800 p-1.5 rounded-lg border border-slate-700">
@@ -57,8 +86,10 @@
           <i class="fa-solid fa-boxes-stacked text-base"></i>
           <span class="text-[11px] font-bold text-slate-500 uppercase">Unidades</span>
         </div>
-        <div id="kpiUnidadesVal" class="text-base sm:text-lg font-black text-slate-800">0</div>
-        <span class="text-[10px] text-slate-400 font-semibold">Total procesadas</span>
+        <div id="kpiUnidadesVal" class="text-xs font-semibold text-slate-700 leading-tight">
+          🖨️ Imp: 0<br>✨ Pla: 0<br>📦 Peg: 0
+        </div>
+        <span id="kpiUnidadesTotal" class="text-[10px] text-slate-400 font-semibold">Total: 0 unds</span>
       </div>
 
       <div class="bg-white p-3.5 rounded-xl shadow-sm border border-slate-200">
@@ -96,11 +127,6 @@
         <button onclick="descargarBackup()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-3 py-2 rounded-lg flex items-center gap-1.5 shadow">
           <i class="fa-solid fa-download text-sm"></i> Descargar Respaldo (Backup)
         </button>
-
-        <label class="bg-slate-700 hover:bg-slate-800 text-white font-bold px-3 py-2 rounded-lg flex items-center gap-1.5 cursor-pointer shadow">
-          <i class="fa-solid fa-upload text-sm"></i> Restaurar Respaldo
-          <input type="file" id="inputRestaurarBackup" onchange="restaurarBackup(event)" accept=".json" class="hidden">
-        </label>
       </div>
     </section>
 
@@ -248,7 +274,7 @@
             <div id="precioSugeridoTxt" class="text-sm font-bold text-indigo-700">$0 COP</div>
           </div>
           <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-4 py-2 rounded-lg text-xs transition-all shadow">
-            Guardar Orden
+            Guardar Orden en la Nube
           </button>
         </div>
       </form>
@@ -324,23 +350,53 @@
 
   <script>
     let currentUser = localStorage.getItem('fastmark_user_role') || 'sin_seleccion';
-    const PIN_ADMIN = "8648"; 
+    const PIN_ADMIN = "1234"; 
     const CELULAR_JEFE = "573115926645";
     let timerInterval = null;
 
-    let tarifasClientes = JSON.parse(localStorage.getItem('fastmark_tarifas')) || {
+    let tarifasClientes = {
       "Cliente General": { tarifaUnidad: 25, minima: 70000, tel: "3000000000" },
       "Empaques del Caribe": { tarifaUnidad: 22, minima: 65000, tel: "3001234567" },
       "Diseños & Impresos": { tarifaUnidad: 30, minima: 90000, tel: "3159876543" }
     };
 
-    let comprasConsumibles = JSON.parse(localStorage.getItem('fastmark_consumibles')) || [];
-    let orders = JSON.parse(localStorage.getItem('fastmark_orders')) || [];
+    let comprasConsumibles = [];
+    let orders = [];
 
-    function saveStorage() {
-      localStorage.setItem('fastmark_tarifas', JSON.stringify(tarifasClientes));
-      localStorage.setItem('fastmark_consumibles', JSON.stringify(comprasConsumibles));
-      localStorage.setItem('fastmark_orders', JSON.stringify(orders));
+    // INICIALIZACIÓN Y ESCUCHA EN TIEMPO REAL CON FIREBASE
+    function initFirebaseSync() {
+      // Escuchar cambios en Órdenes
+      onSnapshot(collection(db, "orders"), (snapshot) => {
+        orders = [];
+        snapshot.forEach((doc) => orders.push(doc.data()));
+        orders.sort((a, b) => b.timestamp - a.timestamp);
+        renderConsumiblesRendimiento();
+        renderOrders();
+      });
+
+      // Escuchar cambios en Clientes/Tarifas
+      onSnapshot(collection(db, "tarifas"), (snapshot) => {
+        snapshot.forEach((doc) => {
+          tarifasClientes[doc.id] = doc.data();
+        });
+        renderClientesSelect();
+        renderTarifas();
+      });
+
+      // Escuchar cambios en Consumibles
+      onSnapshot(collection(db, "consumibles"), (snapshot) => {
+        comprasConsumibles = [];
+        snapshot.forEach((doc) => comprasConsumibles.push(doc.data()));
+        renderConsumiblesRendimiento();
+      });
+    }
+
+    async function syncDoc(collName, docId, data) {
+      try {
+        await setDoc(doc(db, collName, String(docId)), data);
+      } catch (e) {
+        console.error("Error sincronizando en la nube: ", e);
+      }
     }
 
     function init() {
@@ -352,8 +408,9 @@
       onChangeTipoProceso();
       onChangeConsumibleProceso();
       updateNotice();
-      renderConsumiblesRendimiento();
-      renderOrders();
+
+      // Iniciar conexión con Firebase
+      setTimeout(initFirebaseSync, 1000);
 
       if (timerInterval) clearInterval(timerInterval);
       timerInterval = setInterval(() => {
@@ -443,7 +500,6 @@
       }
     }
 
-    // DESCARGAR BACKUP (JSON)
     function descargarBackup() {
       const backupData = {
         tarifasClientes: tarifasClientes,
@@ -460,40 +516,13 @@
       URL.revokeObjectURL(url);
     }
 
-    // RESTAURAR BACKUP (JSON)
-    function restaurarBackup(e) {
-      const file = e.target.files[0];
-      if (!file) return;
-
-      const reader = new FileReader();
-      reader.onload = function(event) {
-        try {
-          const data = JSON.parse(event.target.result);
-          if (data.orders && data.tarifasClientes) {
-            tarifasClientes = data.tarifasClientes;
-            comprasConsumibles = data.comprasConsumibles || [];
-            orders = data.orders;
-            saveStorage();
-            init();
-            alert("¡Copia de seguridad restaurada con éxito!");
-          } else {
-            alert("El archivo seleccionado no tiene el formato correcto de respaldo FM.");
-          }
-        } catch (err) {
-          alert("Error al leer el archivo de respaldo.");
-        }
-      };
-      reader.readAsText(file);
-    }
-
-    // EXPORTAR A EXCEL (.CSV SEPARADO POR COLUMNAS)
     function exportarExcel() {
       if (orders.length === 0) {
         alert("No hay órdenes registradas para exportar.");
         return;
       }
 
-      let csvContent = "\uFEFF"; // BOM para acentos en Excel
+      let csvContent = "\uFEFF";
       csvContent += "ID Orden;N Remision;Sede;Cliente;Telefono;Proceso;Detalle Trabajo;Cantidad;Tiempo Registrado;Consumos Operario;Valor Cobrado COP;Estado Pago;Medio Pago;Estado Produccion\n";
 
       orders.forEach(o => {
@@ -556,7 +585,7 @@
       const medida = proc === 'Plastificado' ? (document.getElementById('conMedidaRollo').value || '') : '';
 
       const item = {
-        id: Date.now(),
+        id: "CON-" + Date.now(),
         proceso: proc,
         insumo: document.getElementById('conNombre').value,
         medidaRollo: medida,
@@ -565,12 +594,10 @@
         fecha: new Date().toLocaleDateString('es-CO')
       };
 
-      comprasConsumibles.push(item);
-      saveStorage();
+      syncDoc("consumibles", item.id, item);
       document.getElementById('formAddConsumible').reset();
       onChangeConsumibleProceso();
-      renderConsumiblesRendimiento();
-      alert(`Compra de ${item.insumo} registrada con éxito.`);
+      alert(`Compra de ${item.insumo} registrada en la nube.`);
     }
 
     function renderConsumiblesRendimiento() {
@@ -626,8 +653,11 @@
     function calcularKPIs() {
       let totalPorCobrar = 0;
       let countPorCobrar = 0;
-      let totalUnidades = 0;
       let totalMsTime = 0;
+
+      let undsImp = 0;
+      let undsPla = 0;
+      let undsPeg = 0;
 
       let timeImpMs = 0;
       let timePlaMs = 0;
@@ -635,7 +665,9 @@
 
       orders.forEach(o => {
         if (o.estado === 'Terminado' || o.estado === 'Liquidado') {
-          totalUnidades += (o.cantidad || 0);
+          if (o.proceso === 'Impresión') undsImp += (o.cantidad || 0);
+          if (o.proceso === 'Plastificado') undsPla += (o.cantidad || 0);
+          if (o.proceso === 'Pegue de cajas') undsPeg += (o.cantidad || 0);
         }
 
         if (!o.pagado && (o.estado === 'Terminado' || o.estado === 'Liquidado')) {
@@ -651,9 +683,18 @@
         if (o.proceso === 'Pegue de cajas') timePegMs += ms;
       });
 
+      let totalUnidades = undsImp + undsPla + undsPeg;
+
       document.getElementById('kpiPorCobrarVal').innerText = `$${totalPorCobrar.toLocaleString('es-CO')}`;
       document.getElementById('kpiPorCobrarCount').innerText = `${countPorCobrar} órdenes pendientes`;
-      document.getElementById('kpiUnidadesVal').innerText = totalUnidades.toLocaleString('es-CO');
+
+      document.getElementById('kpiUnidadesVal').innerHTML = `
+        🖨️ Imp: ${undsImp.toLocaleString('es-CO')}<br>
+        ✨ Pla: ${undsPla.toLocaleString('es-CO')}<br>
+        📦 Peg: ${undsPeg.toLocaleString('es-CO')}
+      `;
+      document.getElementById('kpiUnidadesTotal').innerText = `Total: ${totalUnidades.toLocaleString('es-CO')} unds`;
+
       document.getElementById('kpiTiempoVal').innerText = formatDuration(totalMsTime);
 
       document.getElementById('kpiProcesosResumen').innerHTML = `
@@ -721,20 +762,22 @@
 
       if (!nombre) return;
 
-      tarifasClientes[nombre] = { tarifaUnidad: tarifa, minima: minima, tel: tel };
-      saveStorage();
-      renderClientesSelect();
-      renderTarifas();
+      const dataCli = { tarifaUnidad: tarifa, minima: minima, tel: tel };
+      syncDoc("tarifas", nombre, dataCli);
       document.getElementById('formAddCliente').reset();
-      alert(`Cliente "${nombre}" guardado.`);
+      alert(`Cliente "${nombre}" guardado en la nube.`);
     }
 
     function eliminarCliente(nombre) {
       if (confirm(`¿Eliminar a "${nombre}"?`)) {
-        delete tarifasClientes[nombre];
-        saveStorage();
-        renderClientesSelect();
-        renderTarifas();
+        try {
+          deleteDoc(doc(db, "tarifas", nombre));
+          delete tarifasClientes[nombre];
+          renderClientesSelect();
+          renderTarifas();
+        } catch (e) {
+          console.error(e);
+        }
       }
     }
 
@@ -829,16 +872,14 @@
         consumos: "",
         valorCalculado: valCalc,
         pagado: false,
-        medioPago: "Pendiente"
+        medioPago: "Pendiente",
+        timestamp: Date.now()
       };
 
-      orders.unshift(newOrder);
-      saveStorage();
+      syncDoc("orders", newOrder.id, newOrder);
       document.getElementById('formNewOrder').reset();
       onChangeTipoProceso();
-      renderConsumiblesRendimiento();
-      renderOrders();
-      alert(`Orden ${newOrder.id} registrada exitosamente.`);
+      alert(`Orden ${newOrder.id} registrada exitosamente en la nube.`);
     }
 
     function startJob(id) {
@@ -846,8 +887,7 @@
       if (order) {
         order.estado = 'En Ejecución';
         order.startTime = new Date().toISOString();
-        saveStorage();
-        renderOrders();
+        syncDoc("orders", order.id, order);
       }
     }
 
@@ -867,9 +907,7 @@
         const inputConsumo = document.getElementById(`consumo-${id}`);
         if (inputConsumo) order.consumos = inputConsumo.value;
 
-        saveStorage();
-        renderConsumiblesRendimiento();
-        renderOrders();
+        syncDoc("orders", order.id, order);
 
         const msjJefe = `🚨 *TRABAJO TERMINADO EN PLANTA*%0A%0A📄 *Orden:* ${order.id}%0A📌 *Remisión N°:* ${order.remision}%0A🏢 *Sede:* ${order.local}%0A👤 *Cliente:* ${order.cliente}%0A⚙️ *Proceso:* ${order.trabajo}%0A📦 *Cantidad:* ${order.cantidad.toLocaleString('es-CO')} unds%0A⏱️ *Tiempo Total Laborado:* ${order.tiempos}%0A🧪 *Consumos:* ${order.consumos || 'Ninguno registrado'}%0A%0AYa puedes ingresar a la app para efectuar la liquidación y enviar la notificación al cliente.`;
 
@@ -888,9 +926,8 @@
       if (pagoSelect) order.pagado = pagoSelect.value === 'true';
       if (medioSelect) order.medioPago = medioSelect.value;
 
-      saveStorage();
-      renderOrders();
-      alert(`Estado de pago para la orden ${order.id} actualizado correctamente.`);
+      syncDoc("orders", order.id, order);
+      alert(`Estado de pago para la orden ${order.id} actualizado en la nube.`);
     }
 
     function sendWhatsAppTrabajoListo(id) {
@@ -898,7 +935,7 @@
       actualizarValoresLocales(id);
 
       order.estado = 'Liquidado';
-      saveStorage();
+      syncDoc("orders", order.id, order);
 
       const estadoPagoTxt = order.pagado ? `✅ *PAGADO* (${order.medioPago})` : `⏳ *PENDIENTE DE PAGO*`;
 
@@ -906,7 +943,6 @@
 
       const url = `https://wa.me/${order.telefono}?text=${mensaje}`;
       window.open(url, '_blank');
-      renderOrders();
     }
 
     function sendWhatsAppConfirmacionPago(id) {
@@ -918,13 +954,12 @@
         return;
       }
 
-      saveStorage();
+      syncDoc("orders", order.id, order);
 
       const mensaje = `Hola *${order.cliente}*! 👋%0A%0ATe confirmamos que hemos recibido tu pago de *$${Number(order.valorCalculado).toLocaleString('es-CO')} COP* a través de *${order.medioPago}* para el trabajo (*${order.trabajo}*) según Remisión *N° ${order.remision}*.%0A%0A✅ *ESTADO:* PAGO RECIBIDO SATISFACTORIAMENTE.%0A%0A¡Muchas gracias por tu compra en *FM*!`;
 
       const url = `https://wa.me/${order.telefono}?text=${mensaje}`;
       window.open(url, '_blank');
-      renderOrders();
     }
 
     function actualizarValoresLocales(id) {
