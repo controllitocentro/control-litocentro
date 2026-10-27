@@ -909,10 +909,28 @@
 
         syncDoc("orders", order.id, order);
 
-        const msjJefe = `🚨 *TRABAJO TERMINADO EN PLANTA*%0A%0A📄 *Orden:* ${order.id}%0A📌 *Remisión N°:* ${order.remision}%0A🏢 *Sede:* ${order.local}%0A👤 *Cliente:* ${order.cliente}%0A⚙️ *Proceso:* ${order.trabajo}%0A📦 *Cantidad:* ${order.cantidad.toLocaleString('es-CO')} unds%0A⏱️ *Tiempo Total Laborado:* ${order.tiempos}%0A🧪 *Consumos:* ${order.consumos || 'Ninguno registrado'}%0A%0AYa puedes ingresar a la app para efectuar la liquidación y enviar la notificación al cliente.`;
+// --- CONFIGURACIÓN DE ENVÍO POR CORREO ELECTRÓNICO ---
+        const correoDestino = "litocentro2023@gmail.com"; // 
+        const asunto = encodeURIComponent(`🚨 TRABAJO TERMINADO: ${order.id} (Remisión N° ${order.remision}) - Sede ${order.local}`);
+        
+        const cuerpoMensaje = encodeURIComponent(
+`REPORTE DE PRODUCCIÓN - FASTMARK
+----------------------------------------
+📄 Orden: ${order.id}
+📌 Remisión N°: ${order.remision}
+🏢 Sede: ${order.local}
+👤 Cliente: ${order.cliente}
+⚙️ Proceso: ${order.trabajo}
+📦 Cantidad: ${order.cantidad.toLocaleString('es-CO')} unds
+⏱️ Tiempo Total Laborado: ${order.tiempos}
+🧪 Consumos / Insumos: ${order.consumos || 'Ninguno registrado'}
 
-        const urlJefe = `https://wa.me/${CELULAR_JEFE}?text=${msjJefe}`;
-        window.open(urlJefe, '_blank');
+El trabajo se encuentra listo en planta para su posterior liquidación y entrega.`
+        );
+
+        // Abrir app de correo nativa de la tablet/dispositivo
+        const mailtoUrl = `mailto:${correoDestino}?subject=${asunto}&body=${cuerpoMensaje}`;
+        window.location.href = mailtoUrl;
       }
     }
 
