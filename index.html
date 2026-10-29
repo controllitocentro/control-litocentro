@@ -891,7 +891,7 @@
       }
     }
 
-    function finishJob(id) {
+function finishJob(id) {
       const order = orders.find(o => o.id === id);
       if (order) {
         order.estado = 'Terminado';
@@ -907,7 +907,16 @@
         const inputConsumo = document.getElementById(`consumo-${id}`);
         if (inputConsumo) order.consumos = inputConsumo.value;
 
+        // Guardar estado actualizado en Firebase
         syncDoc("orders", order.id, order);
+
+        // --- ENVÍO DE NOTIFICACIÓN POR WHATSAPP ---
+        const msjJefe = `🚨 *TRABAJO TERMINADO EN PLANTA*%0A%0A📄 *Orden:* ${order.id}%0A📌 *Remisión N°:* ${order.remision}%0A🏢 *Sede:* ${order.local}%0A👤 *Cliente:* ${order.cliente}%0A⚙️ *Proceso:* ${order.trabajo}%0A📦 *Cantidad:* ${order.cantidad.toLocaleString('es-CO')} unds%0A⏱️ *Tiempo Total Laborado:* ${order.tiempos}%0A🧪 *Consumos:* ${order.consumos || 'Ninguno registrado'}%0A%0AYa puedes ingresar a la app para efectuar la liquidación y enviar la notificación al cliente.`;
+
+        const urlJefe = `https://wa.me/${CELULAR_JEFE}?text=${msjJefe}`;
+        window.open(urlJefe, '_blank');
+      }
+    }
 
 // --- CONFIGURACIÓN DE ENVÍO POR CORREO ELECTRÓNICO ---
         const correoDestino = "litocentro2023@gmail.com"; // 
