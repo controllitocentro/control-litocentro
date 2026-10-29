@@ -12,21 +12,18 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getFirestore, collection, onSnapshot, doc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-    // CONFIGURACIÓN DE TU PROYECTO DE FIREBASE
     const firebaseConfig = {
-      apiKey: "AIzaSyDFM4fJl33kgM_JcFpmIvz4kjv8vTMuYc8",
-      authDomain: "fastmark-control.firebaseapp.com",
-      projectId: "fastmark-control",
-      storageBucket: "fastmark-control.firebasestorage.app",
-      messagingSenderId: "1030154917337",
-      appId: "1:1030154917337:web:cedb4938a25ae46edbb5c8"
+      apiKey: "TU_API_KEY",
+      authDomain: "TU_PROJECT_ID.firebaseapp.com",
+      projectId: "TU_PROJECT_ID",
+      storageBucket: "TU_PROJECT_ID.appspot.com",
+      messagingSenderId: "TU_SENDER_ID",
+      appId: "TU_APP_ID"
     };
 
-    // Inicializar Firebase
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // Hacer accesibles las funciones al scope global
     window.db = db;
     window.collection = collection;
     window.onSnapshot = onSnapshot;
@@ -56,7 +53,7 @@
         <span class="text-xs mr-2 text-slate-300 font-medium">Usuario:</span>
         <select id="selectUsuario" onchange="cambiarUsuario(this.value)" class="bg-slate-900 text-white text-xs font-bold p-1.5 rounded border border-slate-600 focus:outline-none">
           <option value="sin_seleccion">-- Seleccionar Operario --</option>
-          <option value="milton">🖨️ Milton-Miguel (Prensista Impresión)</option>
+          <option value="milton">🖨️ Milton / Miguel (Prensista Impresión)</option>
           <option value="hector">✨ Héctor (Plastificador)</option>
           <option value="johnatan">📦 Johnatan (Pegue de Cajas)</option>
           <option value="admin">🔒 Administrador (Dueño)</option>
@@ -130,7 +127,7 @@
       </div>
     </section>
 
-    <!-- MÓDULO DE GESTIÓN Y RENDIMIENTO DE CONSUMIBLES (SOLO ADMIN) -->
+    <!-- MÓDULO DE GESTIÓN Y RENDIMIENTO DE CONSUMIBLES -->
     <section id="sectionConsumibles" class="hidden bg-white p-5 rounded-xl shadow-sm border border-slate-200 space-y-4">
       <div class="flex justify-between items-center border-b pb-3">
         <h2 class="text-base font-bold text-slate-800 flex items-center gap-2">
@@ -181,7 +178,7 @@
       </div>
     </section>
 
-    <!-- SECCIÓN SOLO ADMIN: GESTIÓN DE CLIENTES Y TARIFAS -->
+    <!-- GESTIÓN DE CLIENTES Y TARIFAS -->
     <section id="sectionTarifas" class="hidden bg-white p-5 rounded-xl shadow-sm border border-slate-200">
       <div class="flex justify-between items-center mb-3">
         <h2 class="text-base font-bold text-slate-800 flex items-center gap-2">
@@ -224,7 +221,7 @@
       </div>
     </section>
 
-    <!-- SECCIÓN SOLO ADMIN: CREAR OP -->
+    <!-- CREAR OP -->
     <section id="sectionCreateOrder" class="hidden bg-white p-5 rounded-xl shadow-sm border border-slate-200">
       <h2 class="text-base font-bold text-slate-800 mb-3 flex items-center gap-2">
         <i class="fa-solid fa-file-circle-plus text-blue-600"></i> Crear Nueva Orden de Producción
@@ -254,14 +251,14 @@
         <div>
           <label class="block text-xs font-bold text-indigo-900 mb-1">Tipo de Proceso (Asigna el Operario)</label>
           <select id="inputTipoProceso" onchange="onChangeTipoProceso()" class="w-full p-2 border rounded-lg text-xs bg-indigo-50 font-bold text-indigo-900" required>
-            <option value="Impresión">Impresión (Operario: Milton)</option>
+            <option value="Impresión">Impresión (Operario: Milton / Miguel)</option>
             <option value="Plastificado">Plastificado (Operario: Héctor)</option>
             <option value="Pegue de cajas">Pegue de cajas (Operario: Johnatan)</option>
           </select>
         </div>
 
         <div>
-          <label class="block text-xs font-semibold text-slate-600 mb-1">Cantidad (Unidades)</label>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Cantidad Programada (Unidades)</label>
           <input type="number" id="inputCantidad" onkeyup="actualizarPrecioEstimado()" placeholder="Ej. 5000" class="w-full p-2 border rounded-lg text-xs" required>
         </div>
 
@@ -280,7 +277,7 @@
       </form>
     </section>
 
-    <!-- FILTROS DE BÚSQUEDA (SOLO ADMINISTRADOR) -->
+    <!-- FILTROS DE BÚSQUEDA -->
     <section id="sectionFiltros" class="hidden bg-white p-4 rounded-xl shadow-sm border border-slate-200 space-y-3">
       <div class="flex justify-between items-center">
         <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
@@ -350,7 +347,7 @@
 
   <script>
     let currentUser = localStorage.getItem('fastmark_user_role') || 'sin_seleccion';
-    const PIN_ADMIN = "8648"; 
+    const PIN_ADMIN = "1234"; 
     const CELULAR_JEFE = "573115926645";
     let timerInterval = null;
 
@@ -363,9 +360,7 @@
     let comprasConsumibles = [];
     let orders = [];
 
-    // INICIALIZACIÓN Y ESCUCHA EN TIEMPO REAL CON FIREBASE
     function initFirebaseSync() {
-      // Escuchar cambios en Órdenes
       onSnapshot(collection(db, "orders"), (snapshot) => {
         orders = [];
         snapshot.forEach((doc) => orders.push(doc.data()));
@@ -374,7 +369,6 @@
         renderOrders();
       });
 
-      // Escuchar cambios en Clientes/Tarifas
       onSnapshot(collection(db, "tarifas"), (snapshot) => {
         snapshot.forEach((doc) => {
           tarifasClientes[doc.id] = doc.data();
@@ -383,7 +377,6 @@
         renderTarifas();
       });
 
-      // Escuchar cambios en Consumibles
       onSnapshot(collection(db, "consumibles"), (snapshot) => {
         comprasConsumibles = [];
         snapshot.forEach((doc) => comprasConsumibles.push(doc.data()));
@@ -409,7 +402,6 @@
       onChangeConsumibleProceso();
       updateNotice();
 
-      // Iniciar conexión con Firebase
       setTimeout(initFirebaseSync, 1000);
 
       if (timerInterval) clearInterval(timerInterval);
@@ -489,7 +481,7 @@
         notice.className = "p-3 bg-emerald-50 border-l-4 border-emerald-500 text-emerald-900 rounded-r-lg text-sm shadow-sm";
         
         if (currentUser === 'milton') {
-          notice.innerHTML = `<span><i class="fa-solid fa-print text-emerald-600 mr-1"></i> <strong>Operario Milton:</strong> Visualizando órdenes de <strong>Impresión</strong>.</span>`;
+          notice.innerHTML = `<span><i class="fa-solid fa-print text-emerald-600 mr-1"></i> <strong>Operario Milton / Miguel:</strong> Visualizando órdenes de <strong>Impresión</strong>.</span>`;
         } else if (currentUser === 'hector') {
           notice.innerHTML = `<span><i class="fa-solid fa-layer-group text-emerald-600 mr-1"></i> <strong>Operario Héctor:</strong> Visualizando órdenes de <strong>Plastificado</strong>.</span>`;
         } else if (currentUser === 'johnatan') {
@@ -523,10 +515,14 @@
       }
 
       let csvContent = "\uFEFF";
-      csvContent += "ID Orden;N Remision;Sede;Cliente;Telefono;Proceso;Detalle Trabajo;Cantidad;Tiempo Registrado;Consumos Operario;Valor Cobrado COP;Estado Pago;Medio Pago;Estado Produccion\n";
+      csvContent += "ID Orden;N Remision;Sede;Cliente;Telefono;Proceso;Detalle Trabajo;Cantidad Programada;Unds Buenas;Unds Malas;% Rendimiento;Detalle Pegue;Tipo Pegante;Tiempo Registrado;Consumos Operario;Valor Cobrado COP;Estado Pago;Medio Pago;Estado Produccion\n";
 
       orders.forEach(o => {
         let estPago = o.pagado ? "PAGADO" : "PENDIENTE DE PAGO";
+        let buenas = o.undsBuenas !== undefined ? o.undsBuenas : (o.cantidad || 0);
+        let malas = o.undsMalas !== undefined ? o.undsMalas : 0;
+        let rend = o.rendimiento !== undefined ? `${o.rendimiento}%` : '100%';
+
         let row = [
           `"${o.id}"`,
           `"${o.remision}"`,
@@ -535,10 +531,15 @@
           `"${o.telefono}"`,
           `"${o.proceso}"`,
           `"${o.trabajo}"`,
-          o.cantidad,
+          o.cantidad || 0,
+          buenas,
+          malas,
+          `"${rend}"`,
+          `"${o.tipoPegue || 'N/A'}"`,
+          `"${o.tipoPegante || 'N/A'}"`,
           `"${o.tiempos}"`,
           `"${o.consumos || 'Ninguno'}"`,
-          o.valorCalculado,
+          o.valorCalculado || 0,
           `"${estPago}"`,
           `"${o.medioPago}"`,
           `"${o.estado}"`
@@ -550,7 +551,7 @@
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `historial_ordenes_FM_${new Date().toISOString().slice(0,10)}.csv`;
+      a.download = `historial_ordenes_calidad_FM_${new Date().toISOString().slice(0,10)}.csv`;
       a.click();
       URL.revokeObjectURL(url);
     }
@@ -609,7 +610,7 @@
       procesos.forEach(proc => {
         let totalUnds = orders
           .filter(o => o.proceso === proc && (o.estado === 'Terminado' || o.estado === 'Liquidado'))
-          .reduce((acc, o) => acc + (o.cantidad || 0), 0);
+          .reduce((acc, o) => acc + (o.undsBuenas !== undefined ? o.undsBuenas : (o.cantidad || 0)), 0);
 
         let comprasProc = comprasConsumibles.filter(c => c.proceso === proc);
         let totalCantInsumos = comprasProc.reduce((acc, c) => acc + c.cantidad, 0);
@@ -638,12 +639,12 @@
           <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 space-y-1.5">
             <div class="flex justify-between items-center text-slate-700 font-bold">
               <span><i class="fa-solid ${icono} text-teal-600 mr-1"></i> ${proc}</span>
-              <span class="text-[10px] bg-teal-100 text-teal-800 px-2 py-0.5 rounded font-bold">${totalUnds.toLocaleString('es-CO')} unds hechas</span>
+              <span class="text-[10px] bg-teal-100 text-teal-800 px-2 py-0.5 rounded font-bold">${totalUnds.toLocaleString('es-CO')} unds buenas</span>
             </div>
             <div class="text-[11px] text-slate-600 space-y-0.5">
               <p>Insumos Comprados: <strong>${totalCantInsumos} Kg/Lts/Rollos</strong> ($${totalValorInsumos.toLocaleString('es-CO')})</p>
               ${ultimosInsumosTxt ? `<p class="text-[10px] text-slate-400">Insumos: ${ultimosInsumosTxt}</p>` : ''}
-              <p class="text-teal-700">Rendimiento: ${rendTxt}</p>
+              <p class="text-teal-700">Rendimiento Insumos: ${rendTxt}</p>
               <p class="text-slate-500">Costo Insumo: <strong>${costoUndTxt}</strong></p>
             </div>
           </div>`;
@@ -665,9 +666,10 @@
 
       orders.forEach(o => {
         if (o.estado === 'Terminado' || o.estado === 'Liquidado') {
-          if (o.proceso === 'Impresión') undsImp += (o.cantidad || 0);
-          if (o.proceso === 'Plastificado') undsPla += (o.cantidad || 0);
-          if (o.proceso === 'Pegue de cajas') undsPeg += (o.cantidad || 0);
+          let buenas = o.undsBuenas !== undefined ? o.undsBuenas : (o.cantidad || 0);
+          if (o.proceso === 'Impresión') undsImp += buenas;
+          if (o.proceso === 'Plastificado') undsPla += buenas;
+          if (o.proceso === 'Pegue de cajas') undsPeg += buenas;
         }
 
         if (!o.pagado && (o.estado === 'Terminado' || o.estado === 'Liquidado')) {
@@ -693,7 +695,7 @@
         ✨ Pla: ${undsPla.toLocaleString('es-CO')}<br>
         📦 Peg: ${undsPeg.toLocaleString('es-CO')}
       `;
-      document.getElementById('kpiUnidadesTotal').innerText = `Total: ${totalUnidades.toLocaleString('es-CO')} unds`;
+      document.getElementById('kpiUnidadesTotal').innerText = `Total Conforme: ${totalUnidades.toLocaleString('es-CO')} unds`;
 
       document.getElementById('kpiTiempoVal').innerText = formatDuration(totalMsTime);
 
@@ -733,14 +735,14 @@
       } else if (tipo === 'Pegue de cajas') {
         container.innerHTML = `
           <div>
-            <label class="block text-xs font-semibold text-slate-700 mb-1">Tipo de Pegue</label>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Tipo de Pegue Especificado</label>
             <select id="inputTipoPegue" class="w-full p-2 border rounded text-xs bg-white font-semibold">
               <option value="Pegue lateral">Pegue lateral</option>
               <option value="Pegue automático">Pegue automático</option>
             </select>
           </div>
           <div>
-            <label class="block text-xs font-semibold text-slate-700 mb-1">Tipo de Pegante</label>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Tipo de Pegante Especificado</label>
             <select id="inputTipoPegante" class="w-full p-2 border rounded text-xs bg-white font-semibold">
               <option value="Pegante normal">Pegante normal</option>
               <option value="Pegante especial">Pegante especial</option>
@@ -841,6 +843,8 @@
 
       const tipoProceso = document.getElementById('inputTipoProceso').value;
       let detalleTrabajo = tipoProceso;
+      let tPegue = "";
+      let tPegante = "";
 
       if (tipoProceso === 'Impresión') {
         const obs = document.getElementById('inputObs').value;
@@ -851,9 +855,9 @@
         detalleTrabajo += ` - ${plast}`;
         if (obs) detalleTrabajo += ` (${obs})`;
       } else if (tipoProceso === 'Pegue de cajas') {
-        const pegue = document.getElementById('inputTipoPegue').value;
-        const pegante = document.getElementById('inputTipoPegante').value;
-        detalleTrabajo += ` - ${pegue} (${pegante})`;
+        tPegue = document.getElementById('inputTipoPegue').value;
+        tPegante = document.getElementById('inputTipoPegante').value;
+        detalleTrabajo += ` - ${tPegue} (${tPegante})`;
       }
 
       const newOrder = {
@@ -865,11 +869,17 @@
         proceso: tipoProceso,
         trabajo: detalleTrabajo,
         cantidad: cant,
+        tipoPegue: tPegue,
+        tipoPegante: tPegante,
         estado: "Pendiente",
         startTime: null,
         endTime: null,
         tiempos: "Sin iniciar",
         consumos: "",
+        undsBuenas: cant,
+        undsMalas: 0,
+        rendimiento: 100,
+        obsCalidad: "",
         valorCalculado: valCalc,
         pagado: false,
         medioPago: "Pendiente",
@@ -891,7 +901,7 @@
       }
     }
 
-function finishJob(id) {
+    function finishJob(id) {
       const order = orders.find(o => o.id === id);
       if (order) {
         order.estado = 'Terminado';
@@ -907,39 +917,39 @@ function finishJob(id) {
         const inputConsumo = document.getElementById(`consumo-${id}`);
         if (inputConsumo) order.consumos = inputConsumo.value;
 
-        // Guardar estado actualizado en Firebase
+        // Captura de datos del módulo de calidad
+        const buenasInput = document.getElementById(`buenas-${id}`);
+        const malasInput = document.getElementById(`malas-${id}`);
+        const obsCalidadInput = document.getElementById(`obsCalidad-${id}`);
+
+        let buenas = buenasInput ? parseInt(buenasInput.value) || 0 : order.cantidad;
+        let malas = malasInput ? parseInt(malasInput.value) || 0 : 0;
+        let totalReal = buenas + malas;
+
+        let rend = totalReal > 0 ? Math.round((buenas / totalReal) * 100) : 100;
+
+        order.undsBuenas = buenas;
+        order.undsMalas = malas;
+        order.rendimiento = rend;
+        if (obsCalidadInput) order.obsCalidad = obsCalidadInput.value;
+
+        // Si es pegue de cajas, actualizar modalidad real utilizada
+        if (order.proceso === 'Pegue de cajas') {
+          const pegueSel = document.getElementById(`pegueReal-${id}`);
+          const peganteSel = document.getElementById(`peganteReal-${id}`);
+          if (pegueSel) order.tipoPegue = pegueSel.value;
+          if (peganteSel) order.tipoPegante = peganteSel.value;
+        }
+
         syncDoc("orders", order.id, order);
 
-        // --- ENVÍO DE NOTIFICACIÓN POR WHATSAPP ---
-        const msjJefe = `🚨 *TRABAJO TERMINADO EN PLANTA*%0A%0A📄 *Orden:* ${order.id}%0A📌 *Remisión N°:* ${order.remision}%0A🏢 *Sede:* ${order.local}%0A👤 *Cliente:* ${order.cliente}%0A⚙️ *Proceso:* ${order.trabajo}%0A📦 *Cantidad:* ${order.cantidad.toLocaleString('es-CO')} unds%0A⏱️ *Tiempo Total Laborado:* ${order.tiempos}%0A🧪 *Consumos:* ${order.consumos || 'Ninguno registrado'}%0A%0AYa puedes ingresar a la app para efectuar la liquidación y enviar la notificación al cliente.`;
+        // Notificación por WhatsApp con reporte de calidad
+        let detalleCalidadPegue = order.proceso === 'Pegue de cajas' ? `%0A📌 *Modo Pegue:* ${order.tipoPegue || 'N/A'}%0A🧪 *Pegante Usado:* ${order.tipoPegante || 'N/A'}` : '';
+
+        const msjJefe = `🚨 *TRABAJO TERMINADO Y REPORTE DE CALIDAD*%0A%0A📄 *Orden:* ${order.id}%0A📌 *Remisión N°:* ${order.remision}%0A🏢 *Sede:* ${order.local}%0A👤 *Cliente:* ${order.cliente}%0A⚙️ *Proceso:* ${order.trabajo}${detalleCalidadPegue}%0A%0A📊 *INFORME DE CALIDAD:*%0A✅ *Buenas:* ${buenas.toLocaleString('es-CO')} unds%0A❌ *Malas (Merma):* ${malas.toLocaleString('es-CO')} unds%0A📈 *Rendimiento:* ${rend}%%0A⏱️ *Tiempo Laborado:* ${order.tiempos}%0A🧪 *Consumos:* ${order.consumos || 'Ninguno'}%0A💬 *Obs Calidad:* ${order.obsCalidad || 'Ninguna'}`;
 
         const urlJefe = `https://wa.me/${CELULAR_JEFE}?text=${msjJefe}`;
         window.open(urlJefe, '_blank');
-      }
-    }
-
-// --- CONFIGURACIÓN DE ENVÍO POR CORREO ELECTRÓNICO ---
-        const correoDestino = "litocentro2023@gmail.com"; // 
-        const asunto = encodeURIComponent(`🚨 TRABAJO TERMINADO: ${order.id} (Remisión N° ${order.remision}) - Sede ${order.local}`);
-        
-        const cuerpoMensaje = encodeURIComponent(
-`REPORTE DE PRODUCCIÓN - FASTMARK
-----------------------------------------
-📄 Orden: ${order.id}
-📌 Remisión N°: ${order.remision}
-🏢 Sede: ${order.local}
-👤 Cliente: ${order.cliente}
-⚙️ Proceso: ${order.trabajo}
-📦 Cantidad: ${order.cantidad.toLocaleString('es-CO')} unds
-⏱️ Tiempo Total Laborado: ${order.tiempos}
-🧪 Consumos / Insumos: ${order.consumos || 'Ninguno registrado'}
-
-El trabajo se encuentra listo en planta para su posterior liquidación y entrega.`
-        );
-
-        // Abrir app de correo nativa de la tablet/dispositivo
-        const mailtoUrl = `mailto:${correoDestino}?subject=${asunto}&body=${cuerpoMensaje}`;
-        window.location.href = mailtoUrl;
       }
     }
 
@@ -965,8 +975,9 @@ El trabajo se encuentra listo en planta para su posterior liquidación y entrega
       syncDoc("orders", order.id, order);
 
       const estadoPagoTxt = order.pagado ? `✅ *PAGADO* (${order.medioPago})` : `⏳ *PENDIENTE DE PAGO*`;
+      let undsCompletadas = order.undsBuenas !== undefined ? order.undsBuenas : order.cantidad;
 
-      const mensaje = `Hola *${order.cliente}*! 👋%0A%0ATe informamos que tu pedido (*${order.trabajo}*) correspondiente a la Remisión *N° ${order.remision}* ya está terminado y listo para entregar/recoger.%0A%0A📦 *Cantidad:* ${order.cantidad.toLocaleString('es-CO')} unds%0A💵 *Valor a cancelar:* $${Number(order.valorCalculado).toLocaleString('es-CO')} COP%0A📌 *Estado Pago:* ${estadoPagoTxt}%0A%0AQuedamos atentos a tu confirmación. ¡Muchas gracias por elegir *FM*!`;
+      const mensaje = `Hola *${order.cliente}*! 👋%0A%0ATe informamos que tu pedido (*${order.trabajo}*) correspondiente a la Remisión *N° ${order.remision}* ya está terminado y listo para entregar/recoger.%0A%0A📦 *Cantidad Final Conforme:* ${undsCompletadas.toLocaleString('es-CO')} unds%0A💵 *Valor a cancelar:* $${Number(order.valorCalculado).toLocaleString('es-CO')} COP%0A📌 *Estado Pago:* ${estadoPagoTxt}%0A%0AQuedamos atentos a tu confirmación. ¡Muchas gracias por elegir *FM*!`;
 
       const url = `https://wa.me/${order.telefono}?text=${mensaje}`;
       window.open(url, '_blank');
@@ -998,6 +1009,29 @@ El trabajo se encuentra listo en planta para su posterior liquidación y entrega
       if (valInput) order.valorCalculado = parseFloat(valInput.value) || 0;
       if (pagoSelect) order.pagado = pagoSelect.value === 'true';
       if (medioSelect) order.medioPago = medioSelect.value;
+    }
+
+    function calcularEfectivaMerma(id) {
+      const order = orders.find(o => o.id === id);
+      if (!order) return;
+      
+      const buenasVal = parseInt(document.getElementById(`buenas-${id}`).value) || 0;
+      const malasVal = parseInt(document.getElementById(`malas-${id}`).value) || 0;
+      const total = buenasVal + malasVal;
+      
+      let rend = total > 0 ? Math.round((buenasVal / total) * 100) : 100;
+      
+      const barEl = document.getElementById(`bar-${id}`);
+      const txtEl = document.getElementById(`rendTxt-${id}`);
+      
+      if (barEl && txtEl) {
+        barEl.style.width = `${rend}%`;
+        txtEl.innerText = `${rend}%`;
+
+        if (rend >= 95) barEl.className = "h-3 rounded-full transition-all duration-500 bg-emerald-500";
+        else if (rend >= 85) barEl.className = "h-3 rounded-full transition-all duration-500 bg-amber-500";
+        else barEl.className = "h-3 rounded-full transition-all duration-500 bg-rose-500";
+      }
     }
 
     function limpiarFiltros() {
@@ -1058,6 +1092,14 @@ El trabajo se encuentra listo en planta para su posterior liquidación y entrega
         if (order.estado === 'Terminado') badgeColor = "bg-emerald-100 text-emerald-800 border border-emerald-400 font-bold";
         if (order.estado === 'Liquidado') badgeColor = "bg-blue-100 text-blue-800 border border-blue-300";
 
+        let rend = order.rendimiento !== undefined ? order.rendimiento : 100;
+        let buenas = order.undsBuenas !== undefined ? order.undsBuenas : order.cantidad;
+        let malas = order.undsMalas !== undefined ? order.undsMalas : 0;
+
+        let barColor = "bg-emerald-500";
+        if (rend < 85) barColor = "bg-rose-500";
+        else if (rend < 95) barColor = "bg-amber-500";
+
         let cardHtml = `
           <div class="border border-slate-200 rounded-xl p-4 bg-white shadow-sm space-y-3">
             <div class="flex justify-between items-center pb-2 border-b border-slate-100">
@@ -1072,10 +1114,11 @@ El trabajo se encuentra listo en planta para su posterior liquidación y entrega
             <div class="grid grid-cols-2 gap-2 text-xs text-slate-600">
               <p><strong>Cliente:</strong> ${order.cliente}</p>
               <p><strong>Detalle Proceso:</strong> ${order.trabajo}</p>
-              <p><strong>Cantidad:</strong> ${order.cantidad.toLocaleString('es-CO')} unds</p>
+              <p><strong>Cantidad Programada:</strong> ${order.cantidad.toLocaleString('es-CO')} unds</p>
               <p><strong>Tiempo Registrado:</strong> <span class="font-bold text-slate-800" id="timer-${order.id}">${order.tiempos}</span></p>
             </div>`;
 
+        // SECCIÓN DE OPERARIOS
         if (currentUser !== 'admin') {
           if (order.estado === 'Pendiente') {
             cardHtml += `
@@ -1084,27 +1127,127 @@ El trabajo se encuentra listo en planta para su posterior liquidación y entrega
               </button>`;
           } else if (order.estado === 'En Ejecución') {
             cardHtml += `
-              <div class="bg-amber-50 p-3 rounded-lg border border-amber-200 space-y-2">
+              <div class="bg-amber-50 p-3 rounded-lg border border-amber-200 space-y-3">
                 <p class="text-xs text-amber-900 font-bold flex items-center gap-2">
                   <i class="fa-solid fa-spinner fa-spin text-amber-600"></i> Producción en curso...
                 </p>
-                <div>
-                  <label class="block text-[11px] text-slate-600 font-semibold mb-1">Consumos / Insumos Utilizados:</label>
-                  <input type="text" id="consumo-${order.id}" placeholder="Ej. 2.5 kg Pega PVA / 1 Rollo 32cm" value="${order.consumos}" class="w-full p-1.5 border rounded text-xs bg-white">
+
+                <!-- MÓDULO FORMATO DE CALIDAD -->
+                <div class="bg-white p-3 rounded border border-amber-300 space-y-2 text-xs">
+                  <p class="font-bold text-slate-700 border-b pb-1 flex items-center gap-1.5">
+                    <i class="fa-solid fa-clipboard-check text-indigo-600"></i> Formato de Control de Calidad
+                  </p>
+
+                  <div class="grid grid-cols-2 gap-2">
+                    <div>
+                      <label class="block font-semibold text-slate-600 text-[11px] mb-1">Unidades Buenas</label>
+                      <input type="number" id="buenas-${order.id}" value="${order.cantidad}" onkeyup="calcularEfectivaMerma('${order.id}')" onchange="calcularEfectivaMerma('${order.id}')" class="w-full p-1.5 border rounded font-bold text-emerald-700 bg-emerald-50">
+                    </div>
+                    <div>
+                      <label class="block font-semibold text-slate-600 text-[11px] mb-1">Unidades Malas (Merma)</label>
+                      <input type="number" id="malas-${order.id}" value="0" onkeyup="calcularEfectivaMerma('${order.id}')" onchange="calcularEfectivaMerma('${order.id}')" class="w-full p-1.5 border rounded font-bold text-rose-700 bg-rose-50">
+                    </div>
+                  </div>
+
+                  ${order.proceso === 'Pegue de cajas' ? `
+                  <div class="grid grid-cols-2 gap-2 pt-1">
+                    <div>
+                      <label class="block font-semibold text-slate-600 text-[11px] mb-1">Modo de Pegue Real</label>
+                      <select id="pegueReal-${order.id}" class="w-full p-1 border rounded bg-slate-50 font-medium">
+                        <option value="Pegue lateral" ${order.tipoPegue==='Pegue lateral'?'selected':''}>Pegue lateral</option>
+                        <option value="Pegue automático" ${order.tipoPegue==='Pegue automático'?'selected':''}>Pegue automático</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label class="block font-semibold text-slate-600 text-[11px] mb-1">Pegante Utilizado</label>
+                      <select id="peganteReal-${order.id}" class="w-full p-1 border rounded bg-slate-50 font-medium">
+                        <option value="Pegante normal" ${order.tipoPegante==='Pegante normal'?'selected':''}>Pegante normal</option>
+                        <option value="Pegante especial" ${order.tipoPegante==='Pegante especial'?'selected':''}>Pegante especial</option>
+                      </select>
+                    </div>
+                  </div>` : ''}
+
+                  <!-- GRÁFICO DINÁMICO DE RENDIMIENTO -->
+                  <div class="pt-2 border-t space-y-1">
+                    <div class="flex justify-between text-[11px] font-bold text-slate-700">
+                      <span>Rendimiento Estimado:</span>
+                      <span id="rendTxt-${order.id}" class="text-indigo-700 font-extrabold">100%</span>
+                    </div>
+                    <div class="w-full bg-slate-200 rounded-full h-3">
+                      <div id="bar-${order.id}" class="h-3 rounded-full transition-all duration-500 ${barColor}" style="width: 100%;"></div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label class="block font-semibold text-slate-600 text-[11px] mb-1">Consumos / Insumos Usados</label>
+                    <input type="text" id="consumo-${order.id}" placeholder="Ej. 2.5 kg Pega PVA / 1 Rollo 32cm" value="${order.consumos}" class="w-full p-1.5 border rounded bg-white">
+                  </div>
+
+                  <div>
+                    <label class="block font-semibold text-slate-600 text-[11px] mb-1">Observaciones de Calidad / Falla</label>
+                    <input type="text" id="obsCalidad-${order.id}" placeholder="Ej. Descuadre en guillotina / Tinta corrida" value="${order.obsCalidad || ''}" class="w-full p-1.5 border rounded bg-white">
+                  </div>
                 </div>
+
                 <button onclick="finishJob('${order.id}')" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-lg text-xs flex items-center justify-center gap-2 shadow">
-                  <i class="fa-solid fa-stop"></i> Terminar Trabajo y Avisar al Jefe
+                  <i class="fa-solid fa-stop"></i> Terminar Trabajo y Reportar Calidad
                 </button>
               </div>`;
           } else {
-            cardHtml += `<p class="text-xs text-emerald-700 font-bold bg-emerald-50 p-2 rounded text-center">✓ Trabajo Finalizado (${order.tiempos})</p>`;
+            cardHtml += `
+              <div class="bg-emerald-50 p-2.5 rounded border border-emerald-200 text-xs space-y-1 text-slate-700">
+                <p class="font-bold text-emerald-800">✓ Trabajo Finalizado (${order.tiempos})</p>
+                <p>Buenas: <strong>${buenas.toLocaleString('es-CO')}</strong> | Malas: <strong class="text-rose-600">${malas.toLocaleString('es-CO')}</strong> | Rendimiento: <strong class="text-indigo-700">${rend}%</strong></p>
+              </div>`;
           }
         }
 
+        // SECCIÓN DE ADMINISTRADOR
         else {
           cardHtml += `
-            <div class="bg-slate-50 p-3 rounded-lg text-xs space-y-2 border border-slate-200">
-              <div class="flex justify-between items-center text-slate-500">
+            <div class="bg-slate-50 p-3 rounded-lg text-xs space-y-3 border border-slate-200">
+              
+              <!-- FORMATO RESULTADO DE CALIDAD EN TABLA Y GRÁFICO -->
+              <div class="bg-white p-3 rounded-lg border border-slate-200 space-y-2">
+                <div class="flex justify-between items-center border-b pb-1">
+                  <span class="font-bold text-slate-700"><i class="fa-solid fa-chart-column text-indigo-600 mr-1"></i> Formato de Reporte de Calidad</span>
+                  <span class="font-extrabold text-[11px] px-2 py-0.5 rounded ${rend >= 95 ? 'bg-emerald-100 text-emerald-800' : (rend >= 85 ? 'bg-amber-100 text-amber-800' : 'bg-rose-100 text-rose-800')}">Rendimiento: ${rend}%</span>
+                </div>
+
+                <div class="overflow-x-auto">
+                  <table class="w-full text-center text-[11px] border-collapse">
+                    <thead>
+                      <tr class="bg-slate-100 text-slate-600 font-bold">
+                        <th class="p-1 border">Programadas</th>
+                        <th class="p-1 border text-emerald-700">Buenas</th>
+                        <th class="p-1 border text-rose-700">Malas</th>
+                        <th class="p-1 border">% Rendimiento</th>
+                        ${order.proceso === 'Pegue de cajas' ? `<th class="p-1 border">Detalle Pegue</th>` : ''}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr class="font-bold text-slate-800">
+                        <td class="p-1 border">${(order.cantidad || 0).toLocaleString('es-CO')}</td>
+                        <td class="p-1 border text-emerald-700">${buenas.toLocaleString('es-CO')}</td>
+                        <td class="p-1 border text-rose-700">${malas.toLocaleString('es-CO')}</td>
+                        <td class="p-1 border text-indigo-700">${rend}%</td>
+                        ${order.proceso === 'Pegue de cajas' ? `<td class="p-1 border text-[10px] text-slate-600">${order.tipoPegue || 'N/A'}<br>(${order.tipoPegante || 'N/A'})</td>` : ''}
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                <!-- GRÁFICO DE BARRA DE RENDIMIENTO -->
+                <div class="space-y-1 pt-1">
+                  <div class="w-full bg-slate-200 rounded-full h-2.5">
+                    <div class="h-2.5 rounded-full ${barColor}" style="width: ${rend}%;"></div>
+                  </div>
+                </div>
+
+                ${order.obsCalidad ? `<p class="text-[10px] text-slate-500 bg-amber-50 p-1.5 rounded border border-amber-200"><strong>Obs. Calidad:</strong> ${order.obsCalidad}</p>` : ''}
+              </div>
+
+              <div class="flex justify-between items-center text-slate-500 text-[11px]">
                 <span>Tiempo Total: <strong>${order.tiempos}</strong></span>
                 <span>Consumos: <strong>${order.consumos || 'Ninguno'}</strong></span>
               </div>
