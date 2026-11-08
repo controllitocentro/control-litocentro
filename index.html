@@ -1275,12 +1275,30 @@
                 </div>
               </div>
 
-              <div class="pt-3 border-t border-slate-200 flex flex-wrap justify-between items-center gap-2">
-                <button onclick="actualizarPagoSoloGuardar('${order.id}')" class="bg-slate-600 hover:bg-slate-700 text-white font-bold px-3 py-1.5 rounded text-[11px] flex items-center gap-1 shadow">
-                  <i class="fa-solid fa-floppy-disk"></i> Guardar Estado Pago (Sin Mensaje)
-                </button>
-
+             <div class="pt-3 border-t border-slate-200 flex flex-wrap justify-between items-center gap-2">
+  <div class="flex items-center gap-2">
+    <button onclick="actualizarPagoSoloGuardar('${order.id}')" class="bg-slate-600 hover:bg-slate-700 text-white font-bold px-3 py-1.5 rounded text-[11px] flex items-center gap-1 shadow">
+      <i class="fa-solid fa-floppy-disk"></i> Guardar Estado Pago (Sin Mensaje)
+    </button>
+    <button onclick="deleteOrder('${order.id}')" class="bg-rose-600 hover:bg-rose-700 text-white font-bold px-2.5 py-1.5 rounded text-[11px] flex items-center gap-1 shadow" title="Eliminar Orden">
+      <i class="fa-solid fa-trash"></i> Borrar
+    </button>
+  </div>
                 <div class="flex flex-wrap gap-2">
+                function deleteOrder(id) {
+      const order = orders.find(o => o.id === id);
+      if (!order) return;
+
+      const confirmacion = confirm(`⚠️ ¿Estás seguro de que deseas eliminar la orden ${order.id} (Remisión: ${order.remision})?`);
+      if (confirmacion) {
+        try {
+          deleteDoc(doc(db, "orders", String(id)));
+          alert(`La orden ${id} ha sido eliminada con éxito.`);
+        } catch (e) {
+          console.error("Error al eliminar la orden: ", e);
+        }
+      }
+    }
                   <button onclick="sendWhatsAppTrabajoListo('${order.id}')" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3 py-1.5 rounded text-[11px] flex items-center gap-1 shadow">
                     <i class="fa-brands fa-whatsapp"></i> 1. Avisar Trabajo Terminado
                   </button>
