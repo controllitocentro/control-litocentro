@@ -13,7 +13,7 @@
     import { getFirestore, collection, onSnapshot, doc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     const firebaseConfig = {
-      apiKey: "TAIzaSyDFM4fJl33kgM_JcFpmIvz4kjv8vTMuYc8",
+      apiKey: "AIzaSyDFM4fJl33kgM_JcFpmIvz4kjv8vTMuyC8",
       authDomain: "fastmark-control.firebaseapp.com",
       projectId: "fastmark-control",
       storageBucket: "fastmark-control.firebasestorage.app",
@@ -198,8 +198,8 @@
               <input type="text" id="cliNombre" placeholder="Ej. Empaques Caribe" class="w-full p-2 border rounded bg-white text-xs" required>
             </div>
             <div>
-              <label class="block text-slate-600 font-semibold mb-1">WhatsApp Cliente (Sin +57)</label>
-              <input type="tel" id="cliTel" placeholder="Ej. 3001234567" class="w-full p-2 border rounded bg-white text-xs" required>
+              <label class="block text-slate-600 font-semibold mb-1">Correo Electrónico Cliente</label>
+              <input type="email" id="cliEmail" placeholder="Ej. contacto@cliente.com" class="w-full p-2 border rounded bg-white text-xs" required>
             </div>
             <div>
               <label class="block text-slate-600 font-semibold mb-1">Precio x Unidad ($)</label>
@@ -244,8 +244,8 @@
           </select>
         </div>
         <div>
-          <label class="block text-xs font-semibold text-slate-600 mb-1">Teléfono WhatsApp Cliente</label>
-          <input type="tel" id="inputTel" placeholder="Ej. 3001234567" class="w-full p-2 border rounded-lg text-xs" required>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Correo Electrónico Cliente</label>
+          <input type="email" id="inputEmail" placeholder="Ej. contacto@cliente.com" class="w-full p-2 border rounded-lg text-xs" required>
         </div>
 
         <div>
@@ -348,13 +348,13 @@
   <script>
     let currentUser = localStorage.getItem('fastmark_user_role') || 'sin_seleccion';
     const PIN_ADMIN = "1234"; 
-    const CELULAR_JEFE = "573115926645";
+    const CORREO_GERENCIA = "gerencia@fastmark.com.co"; // <-- Tu correo para recibir alertas
     let timerInterval = null;
 
     let tarifasClientes = {
-      "Cliente General": { tarifaUnidad: 25, minima: 70000, tel: "3000000000" },
-      "Empaques del Caribe": { tarifaUnidad: 22, minima: 65000, tel: "3001234567" },
-      "Diseños & Impresos": { tarifaUnidad: 30, minima: 90000, tel: "3159876543" }
+      "Cliente General": { tarifaUnidad: 25, minima: 70000, email: "cliente@general.com" },
+      "Empaques del Caribe": { tarifaUnidad: 22, minima: 65000, email: "compras@empaquescaribe.com" },
+      "Diseños & Impresos": { tarifaUnidad: 30, minima: 90000, email: "info@disenosyimpresos.com" }
     };
 
     let comprasConsumibles = [];
@@ -515,7 +515,7 @@
       }
 
       let csvContent = "\uFEFF";
-      csvContent += "ID Orden;N Remision;Sede;Cliente;Telefono;Proceso;Detalle Trabajo;Cantidad Programada;Unds Buenas;Unds Malas;% Rendimiento;Detalle Pegue;Tipo Pegante;Tiempo Registrado;Consumos Operario;Valor Cobrado COP;Estado Pago;Medio Pago;Estado Produccion\n";
+      csvContent += "ID Orden;N Remision;Sede;Cliente;Correo;Proceso;Detalle Trabajo;Cantidad Programada;Unds Buenas;Unds Malas;% Rendimiento;Detalle Pegue;Tipo Pegante;Tiempo Registrado;Consumos Operario;Valor Cobrado COP;Estado Pago;Medio Pago;Estado Produccion\n";
 
       orders.forEach(o => {
         let estPago = o.pagado ? "PAGADO" : "PENDIENTE DE PAGO";
@@ -528,7 +528,7 @@
           `"${o.remision}"`,
           `"${o.local}"`,
           `"${o.cliente}"`,
-          `"${o.telefono}"`,
+          `"${o.email || ''}"`,
           `"${o.proceso}"`,
           `"${o.trabajo}"`,
           o.cantidad || 0,
@@ -758,13 +758,13 @@
     function guardarNuevoCliente(e) {
       e.preventDefault();
       const nombre = document.getElementById('cliNombre').value.trim();
-      const tel = document.getElementById('cliTel').value.trim().replace(/\D/g,'');
+      const email = document.getElementById('cliEmail').value.trim();
       const tarifa = parseFloat(document.getElementById('cliTarifa').value) || 0;
       const minima = parseFloat(document.getElementById('cliMinima').value) || 0;
 
       if (!nombre) return;
 
-      const dataCli = { tarifaUnidad: tarifa, minima: minima, tel: tel };
+      const dataCli = { tarifaUnidad: tarifa, minima: minima, email: email };
       syncDoc("tarifas", nombre, dataCli);
       document.getElementById('formAddCliente').reset();
       alert(`Cliente "${nombre}" guardado en la nube.`);
@@ -805,7 +805,7 @@
           <div class="bg-slate-50 p-2.5 rounded border border-slate-200 flex justify-between items-center">
             <div>
               <p class="font-bold text-slate-800">${cli}</p>
-              <p class="text-slate-500 text-[10px]">Tel: ${data.tel || 'Sin registrar'}</p>
+              <p class="text-slate-500 text-[10px]">Email: ${data.email || 'Sin registrar'}</p>
             </div>
             <div class="text-right">
               <span class="font-bold text-indigo-700">$${data.tarifaUnidad}/und</span>
@@ -821,10 +821,10 @@
     function actualizarPrecioEstimado() {
       const cli = document.getElementById('inputCliente').value;
       const cant = parseInt(document.getElementById('inputCantidad').value) || 0;
-      const telInput = document.getElementById('inputTel');
+      const emailInput = document.getElementById('inputEmail');
 
       if (tarifasClientes[cli]) {
-        telInput.value = tarifasClientes[cli].tel || '';
+        emailInput.value = tarifasClientes[cli].email || '';
         const tarifa = tarifasClientes[cli];
         let valor = cant * tarifa.tarifaUnidad;
         if (valor < tarifa.minima && cant > 0) valor = tarifa.minima;
@@ -865,7 +865,7 @@
         local: document.getElementById('inputLocal').value,
         remision: document.getElementById('inputRemision').value,
         cliente: cli,
-        telefono: "57" + document.getElementById('inputTel').value.replace(/\D/g,''),
+        email: document.getElementById('inputEmail').value,
         proceso: tipoProceso,
         trabajo: detalleTrabajo,
         cantidad: cant,
@@ -943,13 +943,31 @@
 
         syncDoc("orders", order.id, order);
 
-        // Notificación por WhatsApp con reporte de calidad
-        let detalleCalidadPegue = order.proceso === 'Pegue de cajas' ? `%0A📌 *Modo Pegue:* ${order.tipoPegue || 'N/A'}%0A🧪 *Pegante Usado:* ${order.tipoPegante || 'N/A'}` : '';
+        // --- ENVÍO DE REPORTES VÍA CORREO ELECTRÓNICO ---
+        let detalleCalidadPegue = order.proceso === 'Pegue de cajas' ? `\nModo Pegue: ${order.tipoPegue || 'N/A'}\nPegante Usado: ${order.tipoPegante || 'N/A'}` : '';
 
-        const msjJefe = `🚨 *TRABAJO TERMINADO Y REPORTE DE CALIDAD*%0A%0A📄 *Orden:* ${order.id}%0A📌 *Remisión N°:* ${order.remision}%0A🏢 *Sede:* ${order.local}%0A👤 *Cliente:* ${order.cliente}%0A⚙️ *Proceso:* ${order.trabajo}${detalleCalidadPegue}%0A%0A📊 *INFORME DE CALIDAD:*%0A✅ *Buenas:* ${buenas.toLocaleString('es-CO')} unds%0A❌ *Malas (Merma):* ${malas.toLocaleString('es-CO')} unds%0A📈 *Rendimiento:* ${rend}%%0A⏱️ *Tiempo Laborado:* ${order.tiempos}%0A🧪 *Consumos:* ${order.consumos || 'Ninguno'}%0A💬 *Obs Calidad:* ${order.obsCalidad || 'Ninguna'}`;
+        const asunto = encodeURIComponent(`🚨 TRABAJO TERMINADO Y REPORTE DE CALIDAD: ${order.id} (Remisión ${order.remision})`);
+        const cuerpo = encodeURIComponent(
+`REPORTE DE PRODUCCIÓN Y CALIDAD - FASTMARK
+----------------------------------------
+📄 Orden: ${order.id}
+📌 Remisión N°: ${order.remision}
+🏢 Sede: ${order.local}
+👤 Cliente: ${order.cliente}
+⚙️ Proceso: ${order.trabajo}${detalleCalidadPegue}
 
-        const urlJefe = `https://wa.me/${CELULAR_JEFE}?text=${msjJefe}`;
-        window.open(urlJefe, '_blank');
+INFORME DE CALIDAD:
+✅ Unidades Buenas: ${buenas.toLocaleString('es-CO')} unds
+❌ Unidades Malas (Merma): ${malas.toLocaleString('es-CO')} unds
+📈 Rendimiento: ${rend}%
+⏱️ Tiempo Laborado: ${order.tiempos}
+🧪 Consumos: ${order.consumos || 'Ninguno'}
+💬 Observaciones: ${order.obsCalidad || 'Ninguna'}
+
+El trabajo ha finalizado en planta y se encuentra disponible para liquidación.`
+        );
+
+        window.location.href = `mailto:${litocentro2023@gmail.com}?subject=${asunto}&body=${cuerpo}`;
       }
     }
 
@@ -966,7 +984,8 @@
       syncDoc("orders", order.id, order);
       alert(`Estado de pago para la orden ${order.id} actualizado en la nube.`);
     }
-function deleteOrder(id) {
+
+    function deleteOrder(id) {
       const order = orders.find(o => o.id === id);
       if (!order) return;
 
@@ -980,37 +999,59 @@ function deleteOrder(id) {
         }
       }
     }
-    function sendWhatsAppTrabajoListo(id) {
+
+    function sendEmailTrabajoListo(id) {
       const order = orders.find(o => o.id === id);
       actualizarValoresLocales(id);
 
       order.estado = 'Liquidado';
       syncDoc("orders", order.id, order);
 
-      const estadoPagoTxt = order.pagado ? `✅ *PAGADO* (${order.medioPago})` : `⏳ *PENDIENTE DE PAGO*`;
+      const estadoPagoTxt = order.pagado ? `PAGADO (${order.medioPago})` : `PENDIENTE DE PAGO`;
       let undsCompletadas = order.undsBuenas !== undefined ? order.undsBuenas : order.cantidad;
 
-      const mensaje = `Hola *${order.cliente}*! 👋%0A%0ATe informamos que tu pedido (*${order.trabajo}*) correspondiente a la Remisión *N° ${order.remision}* ya está terminado y listo para entregar/recoger.%0A%0A📦 *Cantidad Final Conforme:* ${undsCompletadas.toLocaleString('es-CO')} unds%0A💵 *Valor a cancelar:* $${Number(order.valorCalculado).toLocaleString('es-CO')} COP%0A📌 *Estado Pago:* ${estadoPagoTxt}%0A%0AQuedamos atentos a tu confirmación. ¡Muchas gracias por elegir *FM*!`;
+      const asunto = encodeURIComponent(`Tu pedido OP-${order.remision} está listo para entrega - Fastmark`);
+      const cuerpo = encodeURIComponent(
+`Hola ${order.cliente},
 
-      const url = `https://wa.me/${order.telefono}?text=${mensaje}`;
-      window.open(url, '_blank');
+Te informamos que tu pedido (${order.trabajo}) correspondiente a la Remisión N° ${order.remision} se encuentra terminado y listo en nuestra sede ${order.local}.
+
+📦 Cantidad Final Conforme: ${undsCompletadas.toLocaleString('es-CO')} unds
+💵 Valor a cancelar: $${Number(order.valorCalculado).toLocaleString('es-CO')} COP
+📌 Estado de Pago: ${estadoPagoTxt}
+
+Quedamos atentos a tu confirmación para coordinar la entrega o recogida.
+
+Atentamente,
+Fastmark Codificaciones & Empaques`
+      );
+
+      window.location.href = `mailto:${order.email || ''}?subject=${asunto}&body=${cuerpo}`;
     }
 
-    function sendWhatsAppConfirmacionPago(id) {
+    function sendEmailConfirmacionPago(id) {
       const order = orders.find(o => o.id === id);
       actualizarValoresLocales(id);
 
       if (!order.pagado) {
-        alert("Para enviar el comprobante de pago, cambia primero el estado del pago a 'Pagado'.");
+        alert("Para enviar el comprobante de pago por correo, cambia primero el estado del pago a 'Pagado'.");
         return;
       }
 
       syncDoc("orders", order.id, order);
 
-      const mensaje = `Hola *${order.cliente}*! 👋%0A%0ATe confirmamos que hemos recibido tu pago de *$${Number(order.valorCalculado).toLocaleString('es-CO')} COP* a través de *${order.medioPago}* para el trabajo (*${order.trabajo}*) según Remisión *N° ${order.remision}*.%0A%0A✅ *ESTADO:* PAGO RECIBIDO SATISFACTORIAMENTE.%0A%0A¡Muchas gracias por tu compra en *FM*!`;
+      const asunto = encodeURIComponent(`Confirmación de Pago Recibido - Remisión N° ${order.remision}`);
+      const cuerpo = encodeURIComponent(
+`Hola ${order.cliente},
 
-      const url = `https://wa.me/${order.telefono}?text=${mensaje}`;
-      window.open(url, '_blank');
+Confirmamos la recepción satisfactoria de tu pago por valor de $${Number(order.valorCalculado).toLocaleString('es-CO')} COP a través de ${order.medioPago} para el trabajo (${order.trabajo}) según Remisión N° ${order.remision}.
+
+ESTADO: PAGO RECIBIDO SATISFACTORIAMENTE.
+
+¡Muchas gracias por confiar en Fastmark!`
+      );
+
+      window.location.href = `mailto:${order.email || ''}?subject=${asunto}&body=${cuerpo}`;
     }
 
     function actualizarValoresLocales(id) {
@@ -1288,21 +1329,22 @@ function deleteOrder(id) {
                 </div>
               </div>
 
-             <div class="pt-3 border-t border-slate-200 flex flex-wrap justify-between items-center gap-2">
-  <div class="flex items-center gap-2">
-    <button onclick="actualizarPagoSoloGuardar('${order.id}')" class="bg-slate-600 hover:bg-slate-700 text-white font-bold px-3 py-1.5 rounded text-[11px] flex items-center gap-1 shadow">
-      <i class="fa-solid fa-floppy-disk"></i> Guardar Estado Pago (Sin Mensaje)
-    </button>
-    <button onclick="deleteOrder('${order.id}')" class="bg-rose-600 hover:bg-rose-700 text-white font-bold px-2.5 py-1.5 rounded text-[11px] flex items-center gap-1 shadow" title="Eliminar Orden">
-      <i class="fa-solid fa-trash"></i> Borrar
-    </button>
-  </div>
-  <div class="flex flex-wrap gap-2">
-                  <button onclick="sendWhatsAppTrabajoListo('${order.id}')" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3 py-1.5 rounded text-[11px] flex items-center gap-1 shadow">
-                    <i class="fa-brands fa-whatsapp"></i> 1. Avisar Trabajo Terminado
+              <div class="pt-3 border-t border-slate-200 flex flex-wrap justify-between items-center gap-2">
+                <div class="flex items-center gap-2">
+                  <button onclick="actualizarPagoSoloGuardar('${order.id}')" class="bg-slate-600 hover:bg-slate-700 text-white font-bold px-3 py-1.5 rounded text-[11px] flex items-center gap-1 shadow">
+                    <i class="fa-solid fa-floppy-disk"></i> Guardar Estado Pago (Sin Mensaje)
                   </button>
-                  <button onclick="sendWhatsAppConfirmacionPago('${order.id}')" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-3 py-1.5 rounded text-[11px] flex items-center gap-1 shadow">
-                    <i class="fa-brands fa-whatsapp"></i> 2. Confirmar Pago Recibido
+                  <button onclick="deleteOrder('${order.id}')" class="bg-rose-600 hover:bg-rose-700 text-white font-bold px-2.5 py-1.5 rounded text-[11px] flex items-center gap-1 shadow" title="Eliminar Orden">
+                    <i class="fa-solid fa-trash"></i> Borrar
+                  </button>
+                </div>
+
+                <div class="flex flex-wrap gap-2">
+                  <button onclick="sendEmailTrabajoListo('${order.id}')" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3 py-1.5 rounded text-[11px] flex items-center gap-1 shadow">
+                    <i class="fa-solid fa-envelope"></i> 1. Avisar por Correo
+                  </button>
+                  <button onclick="sendEmailConfirmacionPago('${order.id}')" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-3 py-1.5 rounded text-[11px] flex items-center gap-1 shadow">
+                    <i class="fa-solid fa-envelope-circle-check"></i> 2. Confirmar Pago por Correo
                   </button>
                 </div>
               </div>
