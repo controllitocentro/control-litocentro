@@ -347,8 +347,8 @@
 
   <script>
     let currentUser = localStorage.getItem('fastmark_user_role') || 'sin_seleccion';
-    const PIN_ADMIN = "1234"; 
-    const CORREO_GERENCIA = "litocentro2023@fastmark.com.co"; // <-- Tu correo para recibir alertas
+    const PIN_ADMIN = "8648"; 
+    const CORREO_GERENCIA = "litocentro2023@gmail.com"; // <-- Tu correo para recibir alertas
     let timerInterval = null;
 
     let tarifasClientes = {
@@ -967,7 +967,7 @@ INFORME DE CALIDAD:
 El trabajo ha finalizado en planta y se encuentra disponible para liquidación.`
         );
 
-        window.location.href = `mailto:${CORREO_GERENCIA}?subject=${asunto}&body=${cuerpo}`;
+        window.location.href = mailto:${CORREO_GERENCIA}?subject=${asunto}&body=${cuerpo};
       }
     }
 
