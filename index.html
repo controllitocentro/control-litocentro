@@ -818,13 +818,13 @@
       });
     }
 
-    function actualizarPrecioEstimado() {
+  function actualizarPrecioEstimado() {
       const cli = document.getElementById('inputCliente').value;
       const cant = parseInt(document.getElementById('inputCantidad').value) || 0;
-      const emailInput = document.getElementById('inputEmail');
+      const telInput = document.getElementById('inputTelefono');
 
       if (tarifasClientes[cli]) {
-        emailInput.value = tarifasClientes[cli].email || '';
+        if (telInput) telInput.value = tarifasClientes[cli].telefono || '';
         const tarifa = tarifasClientes[cli];
         let valor = cant * tarifa.tarifaUnidad;
         if (valor < tarifa.minima && cant > 0) valor = tarifa.minima;
@@ -865,7 +865,7 @@
         local: document.getElementById('inputLocal').value,
         remision: document.getElementById('inputRemision').value,
         cliente: cli,
-        email: document.getElementById('inputEmail').value,
+        telefono: document.getElementById('inputTelefono').value.trim().replace(/\D/g, ''),
         proceso: tipoProceso,
         trabajo: detalleTrabajo,
         cantidad: cant,
