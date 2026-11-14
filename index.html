@@ -314,11 +314,11 @@
 
         <div>
           <label class="block text-slate-500 mb-1 font-semibold">Medio de Pago</label>
-          <select id="filterMedioPago" onchange="renderOrders()" class="w-full p-1.5 border rounded bg-slate-50">
+          <select id="filterMedioPago" onchange="renderOrders()" class="w-full p-1.5 border rounded bg-gray-50">
             <option value="todos">Todos los medios</option>
             <option value="Efectivo">Efectivo</option>
             <option value="Nequi">Nequi</option>
-            <option value="Bancolombia">Bancolombia</option>
+            <option value="Daviplata">Daviplata</option>
             <option value="Pendiente">Por Cobrar</option>
           </select>
         </div>
@@ -1251,7 +1251,7 @@ Confirmamos la recepción satisfactoria de tu pago por valor de *$${Number(order
                   </div>
                 </div>
 
-                <button onclick="finishJob('${order.id}')" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-lg text-xs flex items-center justify-center gap-2 shadow">
+               <button onclick="finishJob('${order.id}')" style="background-color: #059669;" class="w-full text-white font-bold py-2.5 rounded-lg text-xs flex items-center justify-center gap-2 shadow">
                   <i class="fa-solid fa-stop"></i> Terminar Trabajo y Reportar Calidad
                 </button>
               </div>`;
@@ -1331,7 +1331,7 @@ Confirmamos la recepción satisfactoria de tu pago por valor de *$${Number(order
                   <select id="medio-${order.id}" class="w-full p-1.5 border rounded bg-white">
                     <option value="Efectivo" ${order.medioPago==='Efectivo'?'selected':''}>Efectivo</option>
                     <option value="Nequi" ${order.medioPago==='Nequi'?'selected':''}>Nequi</option>
-                    <option value="Bancolombia" ${order.medioPago==='Bancolombia'?'selected':''}>Bancolombia</option>
+                    <option value="Daviplata" ${order.medioPago==='Daviplata'?'selected':''}>Daviplata</option>
                     <option value="Pendiente" ${order.medioPago==='Pendiente'?'selected':''}>Por Cobrar</option>
                   </select>
                 </div>
@@ -1347,12 +1347,12 @@ Confirmamos la recepción satisfactoria de tu pago por valor de *$${Number(order
                   </button>
                 </div>
 
-                <div class="flex flex-wrap gap-2">
-                  <button onclick="sendEmailTrabajoListo('${order.id}')" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3 py-1.5 rounded text-[11px] flex items-center gap-1 shadow">
-                    <i class="fa-solid fa-envelope"></i> 1. Avisar por Correo
+               <div class="flex flex-wrap gap-2">
+                  <button onclick="sendWhatsAppTrabajoListo('${order.id}')" style="background-color: #059669;" class="text-white font-bold px-3 py-1.5 rounded text-xs flex items-center gap-1 shadow">
+                    <i class="fa-brands fa-whatsapp"></i> 1. Avisar Trabajo Listo (WhatsApp)
                   </button>
-                  <button onclick="sendEmailConfirmacionPago('${order.id}')" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-3 py-1.5 rounded text-[11px] flex items-center gap-1 shadow">
-                    <i class="fa-solid fa-envelope-circle-check"></i> 2. Confirmar Pago por Correo
+                  <button onclick="sendWhatsAppConfirmacionPago('${order.id}')" style="background-color: #2563eb;" class="text-white font-bold px-3 py-1.5 rounded text-xs flex items-center gap-1 shadow">
+                    <i class="fa-brands fa-whatsapp"></i> 2. Confirmar Pago (WhatsApp)
                   </button>
                 </div>
               </div>
