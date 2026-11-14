@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Control de producción FM</title>
   <link href="https://unpkg.com/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   
   <!-- Firebase SDK Modules -->
@@ -493,19 +494,69 @@
     }
 
     function descargarBackup() {
-      const backupData = {
-        tarifasClientes: tarifasClientes,
-        comprasConsumibles: comprasConsumibles,
-        orders: orders,
-        fechaBackup: new Date().toISOString()
-      };
-      const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `backup_FM_${new Date().toISOString().slice(0,10)}.json`;
-      a.click();
-      URL.revokeObjectURL(url);
+      if (typeof XLSX === 'undefined') {
+        alert("La librería de Excel aún está cargando o no hay conexión. Intenta de nuevo en unos segundos.");
+        return;
+      }
+
+      // 1. Pestaña de Órdenes
+      const datosOrdenes = orders.map(o => ({
+        "ID Orden": o.id || "",
+        "Remisión": o.remision || "",
+        "Sede": o.local || "",
+        "Cliente": o.cliente || "",
+        "WhatsApp / Teléfono": o.telefono || o.tel || o.email || "",
+        "Proceso": o.proceso || "",
+        "Detalle Trabajo": o.trabajo || "",
+        "Estado": o.estado || "",
+        "Fecha Inicio": o.startTime ? o.startTime.slice(0, 10) : "Sin iniciar",
+        "Fecha Fin": o.endTime ? o.endTime.slice(0, 10) : "Pendiente",
+        "Tiempo": o.tiempos || "",
+        "Cant. Programada": Number(o.cantidad) || 0,
+        "Unds. Buenas": o.undsBuenas !== undefined ? Number(o.undsBuenas) : (Number(o.cantidad) || 0),
+        "Unds. Malas": Number(o.undsMalas) || 0,
+        "Rendimiento (%)": o.rendimiento !== undefined ? Number(o.rendimiento) : 100,
+        "Consumos": o.consumos || "",
+        "Obs. Calidad": o.obsCalidad || "",
+        "Valor ($ COP)": Number(o.valorCalculado) || 0,
+        "Estado Pago": o.pagado ? "Pagado" : "Por Cobrar",
+        "Medio de Pago": o.medioPago || "Pendiente"
+      }));
+
+      // 2. Pestaña de Clientes y Tarifas
+      const datosClientes = Object.keys(tarifasClientes).map(nombre => {
+        const c = tarifasClientes[nombre] || {};
+        return {
+          "Cliente": nombre,
+          "Tarifa Unidad ($)": Number(c.tarifaUnidad) || 0,
+          "Tarifa Mínima ($)": Number(c.minima) || 0,
+          "Teléfono / WhatsApp": c.telefono || c.tel || "",
+          "Correo": c.email || ""
+        };
+      });
+
+      // 3. Pestaña de Compras de Insumos
+      const datosInsumos = comprasConsumibles.map(i => ({
+        "ID Compra": i.id || "",
+        "Fecha": i.fecha || "",
+        "Proceso": i.proceso || "",
+        "Insumo": i.insumo || "",
+        "Cantidad": Number(i.cantidad) || 0,
+        "Valor Total ($ COP)": Number(i.valor) || 0
+      }));
+
+      // Crear el libro de Excel con las 3 pestañas
+      const wb = XLSX.utils.book_new();
+      const wsOrdenes = XLSX.utils.json_to_sheet(datosOrdenes);
+      const wsClientes = XLSX.utils.json_to_sheet(datosClientes);
+      const wsInsumos = XLSX.utils.json_to_sheet(datosInsumos);
+
+      XLSX.utils.book_append_sheet(wb, wsOrdenes, "Órdenes");
+      XLSX.utils.book_append_sheet(wb, wsClientes, "Clientes");
+      XLSX.utils.book_append_sheet(wb, wsInsumos, "Insumos");
+
+      const fecha = new Date().toISOString().slice(0, 10);
+      XLSX.writeFile(wb, `Backup_Fastmark_${fecha}.xlsx`);
     }
 
     function exportarExcel() {
