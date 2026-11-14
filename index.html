@@ -362,12 +362,11 @@
     let orders = [];
 
     function initFirebaseSync() {
-      function initFirebaseSync() {
       if (typeof window.onSnapshot === 'undefined') {
         setTimeout(initFirebaseSync, 300);
         return;
       }
-      onSnapshot(collection(db, "orders"), (snapshot) => {
+
       onSnapshot(collection(db, "orders"), (snapshot) => {
         orders = [];
         snapshot.forEach((doc) => orders.push(doc.data()));
