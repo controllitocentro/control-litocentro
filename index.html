@@ -495,12 +495,30 @@
 
     function descargarBackup() {
       if (typeof XLSX === 'undefined') {
-        alert("La librería de Excel aún está cargando o no hay conexión. Intenta de nuevo en unos segundos.");
+        alert("La librería de Excel aún está cargando. Intenta de nuevo en unos segundos.");
+        return;
+      }
+
+      // Tomar datos activos o recuperar de localStorage si aún están sincronizando
+      const listaOrdenes = (typeof orders !== 'undefined' && orders.length > 0) 
+        ? orders 
+        : JSON.parse(localStorage.getItem('fm_orders') || '[]');
+        
+      const mapaClientes = (typeof tarifasClientes !== 'undefined' && Object.keys(tarifasClientes).length > 0) 
+        ? tarifasClientes 
+        : JSON.parse(localStorage.getItem('fm_tarifas') || '{}');
+        
+      const listaInsumos = (typeof comprasConsumibles !== 'undefined' && comprasConsumibles.length > 0) 
+        ? comprasConsumibles 
+        : JSON.parse(localStorage.getItem('fm_consumibles') || '[]');
+
+      if (listaOrdenes.length === 0 && Object.keys(mapaClientes).length === 0) {
+        alert("Espera un par de segundos a que el indicador superior diga 'Conectado a la Nube' y aparezcan tus órdenes en pantalla antes de descargar el Excel.");
         return;
       }
 
       // 1. Pestaña de Órdenes
-      const datosOrdenes = orders.map(o => ({
+      const datosOrdenes = listaOrdenes.map(o => ({
         "ID Orden": o.id || "",
         "Remisión": o.remision || "",
         "Sede": o.local || "",
@@ -524,8 +542,8 @@
       }));
 
       // 2. Pestaña de Clientes y Tarifas
-      const datosClientes = Object.keys(tarifasClientes).map(nombre => {
-        const c = tarifasClientes[nombre] || {};
+      const datosClientes = Object.keys(mapaClientes).map(nombre => {
+        const c = mapaClientes[nombre] || {};
         return {
           "Cliente": nombre,
           "Tarifa Unidad ($)": Number(c.tarifaUnidad) || 0,
@@ -536,7 +554,7 @@
       });
 
       // 3. Pestaña de Compras de Insumos
-      const datosInsumos = comprasConsumibles.map(i => ({
+      const datosInsumos = listaInsumos.map(i => ({
         "ID Compra": i.id || "",
         "Fecha": i.fecha || "",
         "Proceso": i.proceso || "",
@@ -545,7 +563,6 @@
         "Valor Total ($ COP)": Number(i.valor) || 0
       }));
 
-      // Crear el libro de Excel con las 3 pestañas
       const wb = XLSX.utils.book_new();
       const wsOrdenes = XLSX.utils.json_to_sheet(datosOrdenes);
       const wsClientes = XLSX.utils.json_to_sheet(datosClientes);
@@ -553,6 +570,11 @@
 
       XLSX.utils.book_append_sheet(wb, wsOrdenes, "Órdenes");
       XLSX.utils.book_append_sheet(wb, wsClientes, "Clientes");
+      XLSX.utils.book_append_sheet(wb, wsInsumos, "Insumos");
+
+      const fecha = new Date().toISOString().slice(0, 10);
+      XLSX.writeFile(wb, `Backup_Fastmark_${fecha}.xlsx`);
+    }
       XLSX.utils.book_append_sheet(wb, wsInsumos, "Insumos");
 
       const fecha = new Date().toISOString().slice(0, 10);
