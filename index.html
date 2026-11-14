@@ -198,8 +198,8 @@
               <input type="text" id="cliNombre" placeholder="Ej. Empaques Caribe" class="w-full p-2 border rounded bg-white text-xs" required>
             </div>
             <div>
-              <label class="block text-slate-600 font-semibold mb-1">Correo Electrónico Cliente</label>
-              <input type="email" id="cliEmail" placeholder="Ej. contacto@cliente.com" class="w-full p-2 border rounded bg-white text-xs" required>
+              <label class="block text-gray-600 font-semibold mb-1">WhatsApp Cliente (Con indicativo)</label>
+              <input type="text" id="cliTelefono" placeholder="Ej. 573001234567" class="w-full p-2 border rounded bg-white text-xs" required>
             </div>
             <div>
               <label class="block text-slate-600 font-semibold mb-1">Precio x Unidad ($)</label>
@@ -225,9 +225,10 @@
     <section id="sectionCreateOrder" class="hidden bg-white p-5 rounded-xl shadow-sm border border-slate-200">
       <h2 class="text-base font-bold text-slate-800 mb-3 flex items-center gap-2">
         <i class="fa-solid fa-file-circle-plus text-blue-600"></i> Crear Nueva Orden de Producción
-      </h2>
-      <form id="formNewOrder" onsubmit="handleCreateOrder(event)" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div>
+     <div>
+          <label class="block text-xs font-semibold text-gray-600 mb-1">WhatsApp Cliente (Ej. 57300...)</label>
+          <input type="text" id="inputTelefono" placeholder="Ej. 573001234567" class="w-full p-2 border rounded-lg text-xs" required>
+        </div>
           <label class="block text-xs font-semibold text-slate-600 mb-1">Sede / Local</label>
           <select id="inputLocal" class="w-full p-2 border rounded-lg text-xs bg-slate-50" required>
             <option value="Centro">Centro</option>
@@ -755,19 +756,19 @@
       document.getElementById('tarifasContent').classList.toggle('hidden');
     }
 
-    function guardarNuevoCliente(e) {
+   function guardarNuevoCliente(e) {
       e.preventDefault();
       const nombre = document.getElementById('cliNombre').value.trim();
-      const email = document.getElementById('cliEmail').value.trim();
+      const telefono = document.getElementById('cliTelefono').value.trim().replace(/\D/g, '');
       const tarifa = parseFloat(document.getElementById('cliTarifa').value) || 0;
       const minima = parseFloat(document.getElementById('cliMinima').value) || 0;
 
       if (!nombre) return;
 
-      const dataCli = { tarifaUnidad: tarifa, minima: minima, email: email };
+      const dataCli = { tarifaUnidad: tarifa, minima: minima, telefono: telefono };
       syncDoc("tarifas", nombre, dataCli);
       document.getElementById('formAddCliente').reset();
-      alert(`Cliente "${nombre}" guardado en la nube.`);
+      alert(`Cliente "${nombre}" guardado con WhatsApp en la nube.`);
     }
 
     function eliminarCliente(nombre) {
@@ -1000,58 +1001,65 @@ El trabajo ha finalizado en planta y se encuentra disponible para liquidación.`
       }
     }
 
-    function sendEmailTrabajoListo(id) {
+    function sendWhatsAppTrabajoListo(id) {
       const order = orders.find(o => o.id === id);
       actualizarValoresLocales(id);
 
       order.estado = 'Liquidado';
       syncDoc("orders", order.id, order);
 
-      const estadoPagoTxt = order.pagado ? `PAGADO (${order.medioPago})` : `PENDIENTE DE PAGO`;
+      const tel = (order.telefono || '').replace(/\D/g, '');
+      if (!tel) {
+        alert("Esta orden no tiene un número de WhatsApp registrado.");
+        return;
+      }
+
+      const estadoPagoTxt = order.pagado ? `✅ *PAGADO (${order.medioPago})*` : `⏳ *PENDIENTE DE PAGO*`;
       let undsCompletadas = order.undsBuenas !== undefined ? order.undsBuenas : order.cantidad;
 
-      const asunto = encodeURIComponent(`Tu pedido OP-${order.remision} está listo para entrega - Fastmark`);
-      const cuerpo = encodeURIComponent(
-`Hola ${order.cliente},
+      const texto = encodeURIComponent(
+`Hola *${order.cliente}* 👋,
 
-Te informamos que tu pedido (${order.trabajo}) correspondiente a la Remisión N° ${order.remision} se encuentra terminado y listo en nuestra sede ${order.local}.
+Te informamos desde *Fastmark* que tu pedido (*${order.trabajo}*) correspondiente a la *Remisión N° ${order.remision}* está terminado y listo para entrega en nuestra sede *${order.local}*.
 
-📦 Cantidad Final Conforme: ${undsCompletadas.toLocaleString('es-CO')} unds
-💵 Valor a cancelar: $${Number(order.valorCalculado).toLocaleString('es-CO')} COP
-📌 Estado de Pago: ${estadoPagoTxt}
+📦 *Cantidad Final Conforme:* ${undsCompletadas.toLocaleString('es-CO')} unds
+💵 *Valor a cancelar:* $${Number(order.valorCalculado).toLocaleString('es-CO')} COP
+📌 *Estado de Pago:* ${estadoPagoTxt}
 
-Quedamos atentos a tu confirmación para coordinar la entrega o recogida.
-
-Atentamente,
-Fastmark Codificaciones & Empaques`
+Quedamos atentos para coordinar la entrega o recogida.`
       );
 
-      window.location.href = `mailto:${order.email || ''}?subject=${asunto}&body=${cuerpo}`;
+      window.open(`https://wa.me/${tel}?text=${texto}`, '_blank');
     }
 
-    function sendEmailConfirmacionPago(id) {
+    function sendWhatsAppConfirmacionPago(id) {
       const order = orders.find(o => o.id === id);
       actualizarValoresLocales(id);
 
       if (!order.pagado) {
-        alert("Para enviar el comprobante de pago por correo, cambia primero el estado del pago a 'Pagado'.");
+        alert("Para enviar el comprobante, cambia primero el estado del pago a 'Pagado'.");
+        return;
+      }
+
+      const tel = (order.telefono || '').replace(/\D/g, '');
+      if (!tel) {
+        alert("Esta orden no tiene un número de WhatsApp registrado.");
         return;
       }
 
       syncDoc("orders", order.id, order);
 
-      const asunto = encodeURIComponent(`Confirmación de Pago Recibido - Remisión N° ${order.remision}`);
-      const cuerpo = encodeURIComponent(
-`Hola ${order.cliente},
+      const texto = encodeURIComponent(
+`Hola *${order.cliente}* 👋,
 
-Confirmamos la recepción satisfactoria de tu pago por valor de $${Number(order.valorCalculado).toLocaleString('es-CO')} COP a través de ${order.medioPago} para el trabajo (${order.trabajo}) según Remisión N° ${order.remision}.
+Confirmamos la recepción satisfactoria de tu pago por valor de *$${Number(order.valorCalculado).toLocaleString('es-CO')} COP* a través de *${order.medioPago}* para el trabajo (*${order.trabajo}*) según *Remisión N° ${order.remision}*.
 
-ESTADO: PAGO RECIBIDO SATISFACTORIAMENTE.
+✅ *ESTADO: PAGO RECIBIDO SATISFACTORIAMENTE.*
 
-¡Muchas gracias por confiar en Fastmark!`
+¡Muchas gracias por confiar en *Fastmark*!`
       );
 
-      window.location.href = `mailto:${order.email || ''}?subject=${asunto}&body=${cuerpo}`;
+      window.open(`https://wa.me/${tel}?text=${texto}`, '_blank');
     }
 
     function actualizarValoresLocales(id) {
