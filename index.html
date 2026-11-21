@@ -1209,11 +1209,11 @@ Confirmamos la recepción satisfactoria de tu pago por valor de *$${Number(order
       
       let filteredOrders = orders;
       if (currentUser === 'milton') {
-        filteredOrders = orders.filter(o => o.proceso === 'Impresión');
+        filteredOrders = orders.filter(o => o.proceso === 'Impresión' && o.estado !== 'Terminado' && o.estado !== 'Liquidado');
       } else if (currentUser === 'hector') {
-        filteredOrders = orders.filter(o => o.proceso === 'Plastificado');
+        filteredOrders = orders.filter(o => o.proceso === 'Plastificado' && o.estado !== 'Terminado' && o.estado !== 'Liquidado');
       } else if (currentUser === 'johnatan') {
-        filteredOrders = orders.filter(o => o.proceso === 'Pegue de cajas');
+        filteredOrders = orders.filter(o => o.proceso === 'Pegue de cajas' && o.estado !== 'Terminado' && o.estado !== 'Liquidado');
       } 
       else if (currentUser === 'admin') {
         const fRem = document.getElementById('filterRemision').value.trim().toLowerCase();
