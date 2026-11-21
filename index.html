@@ -54,11 +54,12 @@
         <span class="text-xs mr-2 text-gray-300 font-medium">Usuario:</span>
         <select id="selectUsuario" onchange="cambiarUsuario(this.value)" style="background-color: #0f172a;" class="text-white text-xs font-bold p-1.5 rounded border border-gray-600 focus:outline-none">
           <option value="sin_seleccion">-- Seleccionar Operario --</option>
-          <option value="milton">🖨️ Milton / Miguel (Prensista Impresión)</option>
-          <option value="hector">✨ Héctor (Plastificador)</option>
-          <option value="johnatan">📦 Johnatan (Pegue de Cajas)</option>
-          <option value="admin">🔒 Administrador (Dueño)</option>
-        </select>
+            <option value="milton">🖨️ Milton / Miguel (Prensista Impresión)</option>
+            <option value="hector">✨ Héctor (Plastificador)</option>
+            <option value="johnatan">📦 Johnatan (Pegue de Cajas)</option>
+            <option value="joseluis">🔑 José Luis (Admin. Centro)</option>
+            <option value="blanca">🔑 Blanca (Admin. La Estrada)</option>
+            <option value="admin">🔒 Administrador (Dueño)</option>
       </div>
     </div>
   </header>
@@ -348,7 +349,9 @@
 
   <script>
     let currentUser = localStorage.getItem('fastmark_user_role') || 'sin_seleccion';
-    const PIN_ADMIN = "8648"; 
+    const PIN_ADMIN = "8648";
+    const PIN_JOSELUIS = "1234"; // <-- Cambia aquí la clave de José Luis
+    const PIN_BLANCA = "5678";   // <-- Cambia aquí la clave de Blanca
     const CORREO_GERENCIA = "litocentro2023@gmail.com"; // <-- Tu correo para recibir alertas
     let timerInterval = null;
 
@@ -450,9 +453,24 @@
           document.getElementById('selectUsuario').value = currentUser;
           return;
         }
+      } else if (usuario === 'joseluis') {
+        const pinIngresado = prompt("🔑 Ingresa el PIN de José Luis (Centro):");
+        if (pinIngresado !== PIN_JOSELUIS) {
+          alert("PIN incorrecto. Acceso denegado.");
+          document.getElementById('selectUsuario').value = currentUser;
+          return;
+        }
+      } else if (usuario === 'blanca') {
+        const pinIngresado = prompt("🔑 Ingresa el PIN de Blanca (La Estrada):");
+        if (pinIngresado !== PIN_BLANCA) {
+          alert("PIN incorrecto. Acceso denegado.");
+          document.getElementById('selectUsuario').value = currentUser;
+          return;
+        }
       }
+
       currentUser = usuario;
-      if (usuario !== 'admin') {
+      if (usuario !== 'admin' && usuario !== 'joseluis' && usuario !== 'blanca') {
         localStorage.setItem('fastmark_user_role', usuario);
       }
       updateNotice();
@@ -1214,6 +1232,10 @@ Confirmamos la recepción satisfactoria de tu pago por valor de *$${Number(order
         filteredOrders = orders.filter(o => o.proceso === 'Plastificado' && o.estado !== 'Terminado' && o.estado !== 'Liquidado');
       } else if (currentUser === 'johnatan') {
         filteredOrders = orders.filter(o => o.proceso === 'Pegue de cajas' && o.estado !== 'Terminado' && o.estado !== 'Liquidado');
+      } else if (currentUser === 'joseluis') {
+        filteredOrders = orders.filter(o => o.proceso === 'Impresión' || o.proceso === 'Plastificado');
+      } else if (currentUser === 'blanca') {
+        filteredOrders = orders.filter(o => o.proceso === 'Pegue de cajas');
       } 
       else if (currentUser === 'admin') {
         const fRem = document.getElementById('filterRemision').value.trim().toLowerCase();
@@ -1278,7 +1300,8 @@ Confirmamos la recepción satisfactoria de tu pago por valor de *$${Number(order
             </div>`;
 
         // SECCIÓN DE OPERARIOS
-        if (currentUser !== 'admin') {
+        // SECCIÓN DE OPERARIOS
+        if (currentUser !== 'admin' && currentUser !== 'joseluis' && currentUser !== 'blanca') {
           if (order.estado === 'Pendiente') {
             cardHtml += `
               <button onclick="startJob('${order.id}')" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-lg text-xs flex items-center justify-center gap-2 shadow">
@@ -1451,11 +1474,17 @@ Confirmamos la recepción satisfactoria de tu pago por valor de *$${Number(order
 
               <div class="pt-3 border-t border-slate-200 flex flex-wrap justify-between items-center gap-2">
                 <div class="flex items-center gap-2">
-                  <button onclick="actualizarPagoSoloGuardar('${order.id}')" style="background-color: #475569;" class="text-white font-bold px-3 py-1.5 rounded text-xs flex items-center gap-1 shadow">
+                  <button onclick="actualizarPagoSoloGuardar('${order.id}')" style="background-color: #475569;" class="text-white font-bold px-2.5 py-1.5 rounded hover:bg-slate-700 transition flex items-center gap-1">
                     <i class="fa-solid fa-floppy-disk"></i> Guardar Estado Pago (Sin WhatsApp)
-                  <button onclick="abrirModalEditar('${order.id}')" style="background-color: #d97706;" class="text-white font-bold px-2.5 py-1.5 rounded hover:bg-amber-700 transition flex items-center gap-1">
-                 <i class="fa-solid fa-pen-to-square"></i> Editar Orden
-               </button>
+                  </button>
+                  ${currentUser === 'admin' ? `
+                    <button onclick="abrirModalEditar('${order.id}')" style="background-color: #d97706;" class="text-white font-bold px-2.5 py-1.5 rounded hover:bg-amber-700 transition flex items-center gap-1">
+                      <i class="fa-solid fa-pen-to-square"></i> Editar Orden
+                    </button>
+                    <button onclick="deleteOrder('${order.id}')" style="background-color: #e11d48;" class="text-white font-bold px-2.5 py-1.5 rounded hover:bg-rose-700 transition flex items-center gap-1">
+                      <i class="fa-solid fa-trash"></i> Borrar
+                    </button>
+                  ` : ''}
                <button onclick="deleteOrder('${order.id}')" style="background-color: #e11d48;" class="text-white font-bold px-2.5 py-1.5 rounded hover:bg-rose-700 transition flex items-center gap-1">
                  <i class="fa-solid fa-trash"></i> Borrar
                </button>
