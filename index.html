@@ -970,6 +970,29 @@
       if (order) {
         order.estado = 'En Ejecución';
         order.startTime = new Date().toISOString();
+        order.tiempoAcumuladoMs = order.tiempoAcumuladoMs || 0;
+        syncDoc("orders", order.id, order);
+      }
+    }
+
+    function pauseJob(id) {
+      const order = orders.find(o => o.id === id);
+      if (order && order.estado === 'En Ejecución') {
+        const ahora = new Date();
+        const tramoActual = order.startTime ? (ahora - new Date(order.startTime)) : 0;
+        order.tiempoAcumuladoMs = (order.tiempoAcumuladoMs || 0) + tramoActual;
+        order.estado = 'Pausado';
+        order.startTime = null;
+        order.tiempos = formatDuration(order.tiempoAcumuladoMs) + " (Pausado)";
+        syncDoc("orders", order.id, order);
+      }
+    }
+
+    function resumeJob(id) {
+      const order = orders.find(o => o.id === id);
+      if (order && order.estado === 'Pausado') {
+        order.estado = 'En Ejecución';
+        order.startTime = new Date().toISOString();
         syncDoc("orders", order.id, order);
       }
     }
@@ -980,9 +1003,11 @@
         order.estado = 'Terminado';
         order.endTime = new Date().toISOString();
 
-        if (order.startTime) {
-          const diffMs = new Date(order.endTime) - new Date(order.startTime);
-          order.tiempos = formatDuration(diffMs);
+        const tramoFinal = order.startTime ? (new Date(order.endTime) - new Date(order.startTime)) : 0;
+        const totalMs = (order.tiempoAcumuladoMs || 0) + tramoFinal;
+
+        if (totalMs > 0) {
+          order.tiempos = formatDuration(totalMs);
         } else {
           order.tiempos = "No cronometrado";
         }
@@ -1323,11 +1348,26 @@ Confirmamos la recepción satisfactoria de tu pago por valor de *$${Number(order
                   </div>
                 </div>
 
-               <button onclick="finishJob('${order.id}')" style="background-color: #059669;" class="w-full text-white font-bold py-2.5 rounded-lg text-xs flex items-center justify-center gap-2 shadow">
-                  <i class="fa-solid fa-stop"></i> Terminar Trabajo y Reportar Calidad
-                </button>
-              </div>`;
-          } else {
+               <div style="display: flex; gap: 8px; margin-top: 8px;">
+                    <button onclick="pauseJob('${order.id}')" style="flex: 1; background-color: #d97706; color: #ffffff; font-weight: bold; padding: 10px; border-radius: 8px; border: none; cursor: pointer;">
+                      <i class="fa-solid fa-pause"></i> Pausar Trabajo
+                    </button>
+                    <button onclick="finishJob('${order.id}')" style="flex: 1; background-color: #059669; color: #ffffff; font-weight: bold; padding: 10px; border-radius: 8px; border: none; cursor: pointer;">
+                      <i class="fa-solid fa-stop"></i> Terminar Trabajo y Reportar Calidad
+                    </button>
+                  </div>
+                </div>`;
+            } else if (order.estado === 'Pausado') {
+              cardHtml += `
+                <div class="bg-amber-50 p-3 rounded-lg border border-amber-300 space-y-2" style="margin-top: 8px;">
+                  <p class="text-xs text-amber-900 font-bold flex items-center gap-2">
+                    <i class="fa-solid fa-pause-circle text-amber-600"></i> Trabajo Pausado — Tiempo acumulado: ${order.tiempos || '0m'}
+                  </p>
+                  <button onclick="resumeJob('${order.id}')" style="width: 100%; background-color: #2563eb; color: #ffffff; font-weight: bold; padding: 10px; border-radius: 8px; border: none; cursor: pointer;">
+                    <i class="fa-solid fa-play"></i> Reanudar Trabajo (Nuevo Turno)
+                  </button>
+                </div>`;
+            } else {
             cardHtml += `
               <div class="bg-emerald-50 p-2.5 rounded border border-emerald-200 text-xs space-y-1 text-slate-700">
                 <p class="font-bold text-emerald-800">✓ Trabajo Finalizado (${order.tiempos})</p>
