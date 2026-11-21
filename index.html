@@ -1234,11 +1234,11 @@ Confirmamos la recepción satisfactoria de tu pago por valor de *$${Number(order
         filteredOrders = orders.filter(o => o.proceso === 'Plastificado' && o.estado !== 'Terminado' && o.estado !== 'Liquidado');
       } else if (currentUser === 'johnatan') {
         filteredOrders = orders.filter(o => o.proceso === 'Pegue de cajas' && o.estado !== 'Terminado' && o.estado !== 'Liquidado');
-      } else if (currentUser === 'joseluis') {
-        filteredOrders = orders.filter(o => o.proceso === 'Impresión' || o.proceso === 'Plastificado');
+     } else if (currentUser === 'joseluis') {
+        filteredOrders = orders.filter(o => (o.proceso === 'Impresión' || o.proceso === 'Plastificado') && !o.pagado);
       } else if (currentUser === 'blanca') {
-        filteredOrders = orders.filter(o => o.proceso === 'Pegue de cajas');
-      } 
+        filteredOrders = orders.filter(o => o.proceso === 'Pegue de cajas' && !o.pagado);
+      }
       else if (currentUser === 'admin') {
         const fRem = document.getElementById('filterRemision').value.trim().toLowerCase();
         const fProc = document.getElementById('filterProceso').value;
