@@ -1495,11 +1495,7 @@ Confirmamos la recepción satisfactoria de tu pago por valor de *$${Number(order
                       <i class="fa-solid fa-trash"></i> Borrar
                     </button>
                   ` : ''}
-              ${currentUser === 'admin' ? `
-                    <button onclick="deleteOrder('${order.id}')" style="background-color: #e11d48;" class="text-white font-bold px-2.5 py-1.5 rounded hover:bg-rose-700 transition flex items-center gap-1">
-                      <i class="fa-solid fa-trash"></i> Borrar
-                    </button>
-                  ` : ''}
+             
                 </div>
 
                <div class="flex flex-wrap gap-2">
