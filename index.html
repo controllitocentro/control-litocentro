@@ -670,27 +670,46 @@
       } else if (proc === 'Pegue de cajas') {
         colMedida.classList.add('hidden');
         selectInsumo.innerHTML = `<option value="Pegante normal">Pegante normal</option><option value="Pegante especial">Pegante especial</option>`;
-      }
     }
+        onChangeNombreInsumo();
+      }
+
+      function onChangeNombreInsumo() {
+        const sel = document.getElementById('conNombre').value;
+        const colOtro = document.getElementById('colOtroInsumo');
+        const inputOtro = document.getElementById('conOtroNombre');
+        if (sel === 'Otros') {
+          colOtro.classList.remove('hidden');
+          inputOtro.required = true;
+        } else {
+          colOtro.classList.add('hidden');
+          inputOtro.required = false;
+          inputOtro.value = '';
+        }
+      }
 
     function toggleConsumiblesForm() {
       document.getElementById('formAddConsumible').classList.toggle('hidden');
     }
 
-    function guardarCompraConsumible(e) {
-      e.preventDefault();
-      const proc = document.getElementById('conProceso').value;
-      const medida = proc === 'Plastificado' ? (document.getElementById('conMedidaRollo').value || '') : '';
+function guardarCompraConsumible(e) {
+        e.preventDefault();
+        const proc = document.getElementById('conProceso').value;
+        const medida = proc === 'Plastificado' ? (document.getElementById('conMedidaRollo').value || '') : '';
+        const insumoSeleccionado = document.getElementById('conNombre').value;
+        const nombreFinalInsumo = insumoSeleccionado === 'Otros'
+          ? (document.getElementById('conOtroNombre').value.trim() || 'Otros')
+          : insumoSeleccionado;
 
-      const item = {
-        id: "CON-" + Date.now(),
-        proceso: proc,
-        insumo: document.getElementById('conNombre').value,
-        medidaRollo: medida,
-        cantidad: parseFloat(document.getElementById('conCant').value) || 0,
-        valor: parseFloat(document.getElementById('conValor').value) || 0,
-        fecha: new Date().toLocaleDateString('es-CO')
-      };
+        const item = {
+          id: "CON-" + Date.now(),
+          proceso: proc,
+          insumo: nombreFinalInsumo,
+          medidaRollo: medida,
+          cantidad: parseFloat(document.getElementById('conCant').value) || 0,
+          valor: parseFloat(document.getElementById('conValor').value) || 0,
+          fecha: new Date().toLocaleDateString('es-CO')
+        };
 
       syncDoc("consumibles", item.id, item);
       document.getElementById('formAddConsumible').reset();
