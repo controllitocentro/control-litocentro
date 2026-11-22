@@ -154,8 +154,13 @@
           </div>
           <div>
             <label class="block text-slate-600 font-semibold mb-1">Insumo / Consumible</label>
-            <select id="conNombre" class="w-full p-2 border rounded bg-white" required>
+            <select id="conNombre" onchange="onChangeNombreInsumo()" class="w-full p-2 border rounded bg-white" required>
             </select>
+          </div>
+
+          <div id="colOtroInsumo" class="hidden">
+            <label class="block text-slate-600 font-semibold mb-1">Nombre del Producto (Otros)</label>
+            <input type="text" id="conOtroNombre" placeholder="Escribe el producto..." class="w-full p-2 border rounded bg-white">
           </div>
 
           <div id="colMedidaRollo" class="hidden">
