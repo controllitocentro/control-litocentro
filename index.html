@@ -335,6 +335,22 @@
           <select id="filterCliente" onchange="renderOrders()" class="w-full p-1.5 border rounded bg-slate-50">
           </select>
         </div>
+        <div>
+            <label class="block text-slate-500 mb-1 font-semibold">Estado Orden</label>
+            <select id="filterEstadoOrden" onchange="renderOrders()" class="w-full p-1.5 border rounded bg-slate-50">
+              <option value="todos">Todos los estados</option>
+              <option value="Pendiente">Pendiente</option>
+              <option value="En Ejecución">En Ejecución</option>
+              <option value="Pausado">Pausado</option>
+              <option value="Terminado">Terminado</option>
+              <option value="Liquidado">Liquidado</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-slate-500 mb-1 font-semibold">Fecha Finalización</label>
+            <input type="date" id="filterFechaFin" onchange="renderOrders()" class="w-full p-1.5 border rounded bg-slate-50">
+          </div>
       </div>
     </section>
 
@@ -1269,6 +1285,8 @@ Confirmamos la recepción satisfactoria de tu pago por valor de *$${Number(order
         const fEstPag = document.getElementById('filterEstadoPago').value;
         const fMedPag = document.getElementById('filterMedioPago').value;
         const fCli = document.getElementById('filterCliente').value;
+        const fEstOrd = document.getElementById('filterEstadoOrden').value;
+        const fFecFin = document.getElementById('filterFechaFin').value;
 
         if (fRem) filteredOrders = filteredOrders.filter(o => (o.remision || '').toLowerCase().includes(fRem));
         if (fProc !== 'todos') filteredOrders = filteredOrders.filter(o => o.proceso === fProc);
@@ -1276,6 +1294,15 @@ Confirmamos la recepción satisfactoria de tu pago por valor de *$${Number(order
         if (fEstPag === 'pagado') filteredOrders = filteredOrders.filter(o => o.pagado);
         if (fMedPag !== 'todos') filteredOrders = filteredOrders.filter(o => o.medioPago === fMedPag);
         if (fCli !== 'todos') filteredOrders = filteredOrders.filter(o => o.cliente === fCli);
+        if (fEstOrd !== 'todos') filteredOrders = filteredOrders.filter(o => o.estado === fEstOrd);
+        if (fFecFin) {
+          filteredOrders = filteredOrders.filter(o => {
+            if (!o.endTime) return false;
+            const d = new Date(o.endTime);
+            const fechaLocal = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+            return fechaLocal === fFecFin;
+          });
+        }
       } else {
         filteredOrders = [];
       }
