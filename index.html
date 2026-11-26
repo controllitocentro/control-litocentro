@@ -591,7 +591,8 @@
         "Obs. Calidad": o.obsCalidad || "",
         "Valor ($ COP)": Number(o.valorCalculado) || 0,
         "Estado Pago": o.pagado ? "Pagado" : "Por Cobrar",
-        "Medio de Pago": o.medioPago || "Pendiente"
+        "Medio de Pago": o.medioPago || "Pendiente",
+        "Fecha Pago": o.fechaPago ? new Date(o.fechaPago).toLocaleString('es-CO', { dateStyle: 'short', timeStyle: 'short' }) : (o.pagado ? "Pagado (Sin fecha reg.)" : "Pendiente")
       }));
 
       // 2. Pestaña de Clientes y Tarifas
@@ -1142,8 +1143,16 @@ El trabajo ha finalizado en planta y se encuentra disponible para liquidación.`
       const pagoSelect = document.getElementById(`pago-${id}`);
       const medioSelect = document.getElementById(`medio-${id}`);
 
-      if (valInput) order.valorCalculado = parseFloat(valInput.value) || 0;
-      if (pagoSelect) order.pagado = pagoSelect.value === 'true';
+     if (valInput) order.valorCalculado = parseFloat(valInput.value) || 0;
+      if (pagoSelect) {
+        const nuevoEstadoPago = pagoSelect.value === 'true';
+        if (nuevoEstadoPago && !order.pagado) {
+          order.fechaPago = new Date().toISOString();
+        } else if (!nuevoEstadoPago) {
+          order.fechaPago = null;
+        }
+        order.pagado = nuevoEstadoPago;
+      }
       if (medioSelect) order.medioPago = medioSelect.value;
 
       syncDoc("orders", order.id, order);
@@ -1349,12 +1358,15 @@ Confirmamos la recepción satisfactoria de tu pago por valor de *$${Number(order
         if (rend < 85) barColor = "bg-rose-500";
         else if (rend < 95) barColor = "bg-amber-500";
 
-          const fechaCreacionTxt = order.timestamp
-            ? new Date(order.timestamp).toLocaleString('es-CO', { dateStyle: 'short', timeStyle: 'short' })
-            : 'Sin registro';
-          const fechaTerminacionTxt = order.endTime
-            ? new Date(order.endTime).toLocaleString('es-CO', { dateStyle: 'short', timeStyle: 'short' })
-            : 'En curso / Pendiente';
+         const fechaCreacionTxt = order.timestamp 
+        ? new Date(order.timestamp).toLocaleString('es-CO', { dateStyle: 'short', timeStyle: 'short' }) 
+        : 'Sin registro';
+      const fechaTerminacionTxt = order.endTime 
+        ? new Date(order.endTime).toLocaleString('es-CO', { dateStyle: 'short', timeStyle: 'short' }) 
+        : 'En curso / Pendiente';
+      const fechaPagoTxt = order.fechaPago
+        ? new Date(order.fechaPago).toLocaleString('es-CO', { dateStyle: 'short', timeStyle: 'short' })
+        : (order.pagado ? 'Pagado (Sin fecha reg.)' : 'Pendiente de pago');
 
           let cardHtml = `
             <div class="border border-slate-200 rounded-xl p-4 bg-white shadow-sm space-y-3">
@@ -1374,6 +1386,7 @@ Confirmamos la recepción satisfactoria de tu pago por valor de *$${Number(order
                 <p><strong>Tiempo Registrado:</strong> <span class="font-bold text-slate-800" id="timer-${order.id}">${order.tiempos}</span></p>
                 <p><strong>Fecha Creación:</strong> ${fechaCreacionTxt}</p>
                 <p><strong>Fecha Terminación:</strong> ${fechaTerminacionTxt}</p>
+                <p><strong>Fecha Pago:</strong> <span class="${order.pagado ? 'text-emerald-700 font-semibold' : ''}">${fechaPagoTxt}</span></p>
               </div>`;
         // SECCIÓN DE OPERARIOS
         // SECCIÓN DE OPERARIOS
