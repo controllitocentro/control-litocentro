@@ -515,15 +515,23 @@
         secBackup.classList.remove('hidden');
         secConsum.classList.remove('hidden');
         secFiltros.classList.remove('hidden');
+        document.querySelectorAll('.filtro-solo-admin').forEach(el => el.classList.remove('hidden'));
         notice.className = "p-3 bg-blue-50 border-l-4 border-blue-500 text-blue-900 rounded-r-lg text-sm shadow-sm";
-        notice.innerHTML = `<span><i class="fa-solid fa-user-shield text-blue-600 mr-1"></i> <strong>Modo Administrador:</strong> Control total de producción, insumos, clientes y facturación.</span>`;
+        notice.innerHTML = `<span><i class="fa-solid fa-user-shield text-blue-600 mr-1"></i> <strong>Modo Administrador:</strong> Control total activo.</span>`;
       } else {
         secCreate.classList.add('hidden');
         secTarifas.classList.add('hidden');
         secDash.classList.add('hidden');
         secBackup.classList.add('hidden');
         secConsum.classList.add('hidden');
-        secFiltros.classList.add('hidden');
+
+        if (currentUser === 'joseluis' || currentUser === 'blanca') {
+          secFiltros.classList.remove('hidden');
+          document.querySelectorAll('.filtro-solo-admin').forEach(el => el.classList.add('hidden'));
+        } else {
+          secFiltros.classList.add('hidden');
+        }
+
         notice.className = "p-3 bg-emerald-50 border-l-4 border-emerald-500 text-emerald-900 rounded-r-lg text-sm shadow-sm";
         
         if (currentUser === 'milton') {
@@ -1274,12 +1282,19 @@ Confirmamos la recepción satisfactoria de tu pago por valor de *$${Number(order
         filteredOrders = orders.filter(o => o.proceso === 'Plastificado' && o.estado !== 'Terminado' && o.estado !== 'Liquidado');
       } else if (currentUser === 'johnatan') {
         filteredOrders = orders.filter(o => o.proceso === 'Pegue de cajas' && o.estado !== 'Terminado' && o.estado !== 'Liquidado');
-     } else if (currentUser === 'joseluis') {
+      } else if (currentUser === 'joseluis') {
+        const fRem = document.getElementById('filterRemision').value.trim().toLowerCase();
+        const fCli = document.getElementById('filterCliente').value;
         filteredOrders = orders.filter(o => (o.proceso === 'Impresión' || o.proceso === 'Plastificado') && !o.pagado);
+        if (fRem) filteredOrders = filteredOrders.filter(o => (o.remision || '').toLowerCase().includes(fRem));
+        if (fCli !== 'todos') filteredOrders = filteredOrders.filter(o => o.cliente === fCli);
       } else if (currentUser === 'blanca') {
+        const fRem = document.getElementById('filterRemision').value.trim().toLowerCase();
+        const fCli = document.getElementById('filterCliente').value;
         filteredOrders = orders.filter(o => o.proceso === 'Pegue de cajas' && !o.pagado);
-      }
-      else if (currentUser === 'admin') {
+        if (fRem) filteredOrders = filteredOrders.filter(o => (o.remision || '').toLowerCase().includes(fRem));
+        if (fCli !== 'todos') filteredOrders = filteredOrders.filter(o => o.cliente === fCli);
+      }      else if (currentUser === 'admin') {
         const fRem = document.getElementById('filterRemision').value.trim().toLowerCase();
         const fProc = document.getElementById('filterProceso').value;
         const fEstPag = document.getElementById('filterEstadoPago').value;
