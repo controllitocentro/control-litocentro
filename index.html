@@ -300,7 +300,7 @@
           <input type="text" id="filterRemision" onkeyup="renderOrders()" placeholder="Buscar remisión..." class="w-full p-1.5 border rounded bg-slate-50">
         </div>
 
-        <div>
+        <div class="filtro-solo-admin">
           <label class="block text-slate-500 mb-1 font-semibold">Proceso</label>
           <select id="filterProceso" onchange="renderOrders()" class="w-full p-1.5 border rounded bg-slate-50">
             <option value="todos">Todos los procesos</option>
@@ -310,7 +310,7 @@
           </select>
         </div>
 
-        <div>
+        <div class="filtro-solo-admin">
           <label class="block text-slate-500 mb-1 font-semibold">Estado Pago</label>
           <select id="filterEstadoPago" onchange="renderOrders()" class="w-full p-1.5 border rounded bg-slate-50">
             <option value="todos">Todos los estados</option>
@@ -319,7 +319,7 @@
           </select>
         </div>
 
-        <div>
+        <div class="filtro-solo-admin">
           <label class="block text-slate-500 mb-1 font-semibold">Medio de Pago</label>
           <select id="filterMedioPago" onchange="renderOrders()" class="w-full p-1.5 border rounded bg-gray-50">
             <option value="todos">Todos los medios</option>
@@ -335,7 +335,7 @@
           <select id="filterCliente" onchange="renderOrders()" class="w-full p-1.5 border rounded bg-slate-50">
           </select>
         </div>
-        <div>
+        <div class="filtro-solo-admin">
             <label class="block text-slate-500 mb-1 font-semibold">Estado Orden</label>
             <select id="filterEstadoOrden" onchange="renderOrders()" class="w-full p-1.5 border rounded bg-slate-50">
               <option value="todos">Todos los estados</option>
@@ -347,7 +347,7 @@
             </select>
           </div>
 
-          <div>
+          <div class="filtro-solo-admin">
             <label class="block text-slate-500 mb-1 font-semibold">Fecha Finalización</label>
             <input type="date" id="filterFechaFin" onchange="renderOrders()" class="w-full p-1.5 border rounded bg-slate-50">
           </div>
